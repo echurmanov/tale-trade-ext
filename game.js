@@ -35,9 +35,14 @@ function replaceCardsBlock(){
     var spanResult = $(document.createElement("span"));
     spanResult.css({"display": "block"});
     spanResult.html("Результат:");
+    var spanResultCombine = $(document.createElement("div"));
     oldCombineBtn.parent().append(spanResult);
     oldCombineBtn.parent().append(combineBtn);
+    oldCombineBtn.parent().append(spanResultCombine);
     oldCombineBtn.remove();
+
+
+
 
     combineBtn.addClass("btn");
     combineBtn.addClass("btn-success");
@@ -47,6 +52,82 @@ function replaceCardsBlock(){
     combineBtn.attr('data-more-text', 'Выберите ещу одну или две');
 
     combineBtn.button('select');
+
+    var combineProcess = false;
+
+    combineBtn.on('click', function(){
+      if (combineProcess) {
+        return;
+      }
+      if (selectedCards.length > 1) {
+        combineProcess = true;
+        var cardUids = [];
+        var i = 0;
+        for (var cardName in processedCards) {
+          if (cardName == selectedCards[i]) {
+            if (selectedCardsAuc[i]) {
+              cardUids.push(processedCards[cardName].auctionUids.pop());
+              processedCards[cardName].auctionNumber--;
+              i++;
+            } else {
+              cardUids.push(processedCards[cardName].notAuctionUids.pop());
+              processedCards[cardName].notAuctionNumber--;
+              i++;
+            }
+          }
+          if (i == selectedCards.length) {
+            break;
+          }
+        }
+        selectedCards = [];
+        selectedCardsAuc = [];
+        console.log(1);
+
+        function checkStatus(url) {
+          $.ajax({
+            url: url,
+            type: "get",
+            success: function (res) {
+              if (res.status == "ok") {
+                spanResultCombine.html(res.data.message);
+                combineProcess = false;
+                combineBtn.button('select');
+                cardSelectedBlock.find("li[data-original-title]").remove();
+                updateChoseList(selectedCards, selectedCardsAuc);
+              } else if (res.status == 'processing') {
+                setTimeout(function () {
+                  checkStatus(res.status_url);
+                }, 700);
+              } else if (res.status == 'error') {
+
+              }
+            }
+          });
+        };
+
+        $.ajax({
+          url: "/game/cards/api/combine?api_version=1.0&api_client=CrazyNigerTTE-0.3.5&cards=" + cardUids.join(','),
+          type: "post",
+          method: "post",
+          data: {},
+          success: function(res) {
+            if (res.status == 'processing') {
+              setTimeout(function(){
+                checkStatus(res.status_url);
+              }, 300);
+            }
+
+          },
+          error: function(res) {
+            console.log("Error",res);
+            combineProcess = false;
+            cardSelectedBlock.find("li[data-original-title]").remove();
+            updateChoseList(selectedCards, selectedCardsAuc);
+          }
+        });
+      }
+    });
+
     var n = 0;
 
     for (var rarity = 0; rarity <= 4; rarity++) {
