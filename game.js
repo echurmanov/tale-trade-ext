@@ -317,7 +317,7 @@ function replaceCardsBlock(){
       if (selectedCards.length > 0) {
         var rarityClass = rarityLabelMap[processedCards[selectedCards[0]].rarity];
         var rarityName = rarityNameMap[processedCards[selectedCards[0]].rarity];
-        var auctionStatus = (selectedCardsAuc.indexOf(false) != -1) ? "не продоваемая" : "продоваемая";
+        var auctionStatus = (selectedCardsAuc.indexOf(false) != -1) ? "не продаваемая" : "продаваемая";
 
 
         if (selectedCards.length == 3) {
