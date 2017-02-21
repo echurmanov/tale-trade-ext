@@ -6,10 +6,10 @@ function addCols(data) {
   {
     monthExists = (typeof data['month'] !== 'undefined');
     allExists = (typeof data['all'] !== 'undefined');
-    result = "<td style=\"font-size:11px;\"><strong>"+(monthExists?data['month']['total']:0)+"</strong>\/"+(allExists?data['all']['total']:"???")+"</td>";
-    result += "<td style=\"font-size:11px;\"><strong>"+(monthExists?data['month']['max']:"")+"</strong>\/"+(allExists?data['all']['max']:"???")+"</td>";
-    result += "<td style=\"font-size:11px;\"><strong>"+(monthExists?data['month']['min']:"")+"</strong>\/"+(allExists?data['all']['min']:"???")+"</td>";
-    result += "<td style=\"font-size:11px;\"><strong>"+(monthExists?Math.round(data['month']['avg']):"")+"</strong>\/"+(allExists?Math.round(data['all']['avg']):"???")+"</td>";
+    result = "<td >"+(monthExists?data['month']['total']:0)+" \/ "+(allExists?data['all']['total']:"???")+"</td>";
+    result += "<td >"+(monthExists?data['month']['max']:"")+" \/ "+(allExists?data['all']['max']:"???")+"</td>";
+    result += "<td >"+(monthExists?data['month']['min']:"")+" \/ "+(allExists?data['all']['min']:"???")+"</td>";
+    result += "<td >"+(monthExists?Math.round(data['month']['avg']):"")+" \/ "+(allExists?Math.round(data['all']['avg']):"???")+"</td>";
   } else {
     result = '<td colspan="4"><em>Нет данных по этой карте</em></td>'
   }
@@ -27,9 +27,13 @@ $.ajax({
     }
 
     table.find("thead>tr>th:nth-child(1)").after(
-      '<th width="70px" style=\"font-size:11px;\">Продано</th><th width="70px" style=\"font-size:11px;\">Макс.</th>'
-      + '<th width="70px" style=\"font-size:11px;\">Мин.</th><th width="70px" style=\"font-size:11px;\">Сред.</th>'
+      '<th width="70px" >продано</th><th width="70px" >макс.</th>'
+      + '<th width="70px" >мин.</th><th width="70px" >сред.</th>'
     );
+
+    table.find("tbody>tr>td:nth-child(2)").each(function(idx, el){
+      $(el).css({"font-weight": "bold"});
+    });
 
     var cardBlocks = table.find("tbody>tr>td:nth-child(1)");
     cardBlocks.each(function(idx, el){
@@ -39,8 +43,8 @@ $.ajax({
 
       var addColsHtml = addCols(res[cardName]);
       $td.after(addColsHtml);
-
     });
+
   }
 });
 

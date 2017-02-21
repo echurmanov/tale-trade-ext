@@ -51,6 +51,15 @@ function replaceCardsBlock(){
     combineBtn.attr('data-select-text', 'Выберите карты для объедения');
     combineBtn.attr('data-more-text', 'Выберите ещу одну или две');
 
+    var cardTooltipArgs = jQuery.extend({}, pgf.base.tooltipsArgs);
+    cardTooltipArgs.placement = function(tip, element) {
+      var offset = jQuery(element).offset();
+      if (offset.left == 0 && offset.top == 0) {
+        jQuery(tip).addClass('pgf-hidden');
+      }
+      return 'right';
+    };
+
     combineBtn.button('select');
 
     var combineProcess = false;
@@ -71,6 +80,14 @@ function replaceCardsBlock(){
                 li.addClass(n%2==0?'odd':'even');
                 li.append("<a href=\"javascript:void(0);\" data-card-auction=\"false\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" * ("+card.notAuctionNumber+")</a>");
                 cardChoicesBlock.append(li);
+                var tooltipClass = 'pgf-card-tooltip';
+                var tooltip = pgf.game.widgets.CreateCardTooltip({
+                  type: card.type,
+                  rarity: card.rarity,
+                  name: card.name,
+                  auction: false
+                }, tooltipClass);
+                pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
                 n++;
               }
               if (card.auctionNumber > 0) {
@@ -79,6 +96,14 @@ function replaceCardsBlock(){
                 li.addClass(n%2==0?'odd':'even');
                 li.append("<a href=\"javascript:void(0);\" data-card-auction=\"true\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" ("+card.auctionNumber+")</a>");
                 cardChoicesBlock.append(li);
+                var tooltipClass = 'pgf-card-tooltip';
+                var tooltip = pgf.game.widgets.CreateCardTooltip({
+                  type: card.type,
+                  rarity: card.rarity,
+                  name: card.name,
+                  auction: true
+                }, tooltipClass);
+                pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
                 n++;
               }
             }
@@ -132,6 +157,14 @@ function replaceCardsBlock(){
           li.attr('data-original-title','');
 
           li.append("<a href=\"javascript:void(0);\" data-card-auction=\""+cardAuc+"\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[processedCards[cardName].rarity]+"\" style=\"font-size:10pt\">"+cardName+ (cardAuc?"":" *") +"</a>");
+          var tooltipClass = 'pgf-card-tooltip';
+          var tooltip = pgf.game.widgets.CreateCardTooltip({
+            type: processedCards[cardName].type,
+            rarity: processedCards[cardName].rarity,
+            name: cardName,
+            auction: cardAuc
+          }, tooltipClass);
+          pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
           cardSelectedBlock.append(li);
           li.find("a").on('click', function(evt){
             if (combineProcess) {
@@ -353,6 +386,15 @@ function replaceCardsBlock(){
       }
     }
     var n = 0;
+    var cardTooltipArgs = jQuery.extend({}, pgf.base.tooltipsArgs);
+    cardTooltipArgs.placement = function(tip, element) {
+      var offset = jQuery(element).offset();
+      if (offset.left == 0 && offset.top == 0) {
+        jQuery(tip).addClass('pgf-hidden');
+      }
+      return 'right';
+    };
+
     container.find('li[data-original-title]').remove();
     for (var rarity = 0; rarity <= 4; rarity++) {
       for (var cardName in processedCards) {
@@ -378,6 +420,14 @@ function replaceCardsBlock(){
             caption += " ("+captionParts.join('/')+")";
 
             li.append("<a href=\"/game/cards/use-dialog\" data-card-uid=\""+cardUid+"\" class=\"pgf-card-uid-"+cardUid+" pgf-card-record pgf-card-link "+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+caption+"</a>");
+            var tooltipClass = 'pgf-card-tooltip';
+            var tooltip = pgf.game.widgets.CreateCardTooltip({
+              type: card.type,
+              rarity: card.rarity,
+              name: card.name,
+              auction: card.auctionNumber > 0
+            }, tooltipClass);
+            pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
             container.append(li);
             n++;
           }
