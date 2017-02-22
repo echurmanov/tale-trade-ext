@@ -23,9 +23,59 @@ function replaceCardsBlock(){
 
   var originCombineDialogFn = pgf.game.CombineCardsDialog;
   pgf.game.CombineCardsDialog = function(dialog) {
+
+    var tableHeader = dialog.find("table>thead");
+    tableHeader.append(`<tr>
+<th>
+<span style="float:left">Возвращать по: </span>
+  <div class="btn-group btn-group-xs" role="group" data-toggle="buttons">
+    <label class="btn btn-success active">
+      <input type="radio" name="return-card" id="return-card-1" autocomplete="off" checked value="1">1
+    </label>
+    <label class="btn btn-success">
+      <input type="radio" name="return-card" id="return-card-5" autocomplete="off" value="5">5
+    </label>
+    <label class="btn btn-success">
+      <input type="radio" name="return-card" id="return-card-10" autocomplete="off" value="10">10
+    </label>
+  </div>
+</th>
+<th>
+  <span style="float:left">Перемещать по: </span>
+  <div class="btn-group btn-group-xs" role="group" data-toggle="buttons">
+    <label class="btn btn-success active">
+      <input type="radio" name="select-card" id="select-card-1" autocomplete="off" checked value="1">1
+    </label>
+    <label class="btn btn-success">
+      <input type="radio" name="select-card" id="select-card-5" autocomplete="off" value="5">5
+    </label>
+    <label class="btn btn-success">
+      <input type="radio" name="select-card" id="select-card-10" autocomplete="off" value="10">10
+    </label>
+  </div>
+</th>
+</tr>`);
+
+
+    var selectPer = 1;
+    var returnPer = 1;
+
+    dialog.find("label.btn > input").parent().on('click', function(evt){
+      var input = $(evt.target).find("input");
+      input.trigger('click');
+    });
+
+    dialog.find("input[name=\"select-card\"]").on('change', function(evt){
+      selectPer = $(evt.target).val();
+    });
+
+    dialog.find("input[name=\"return-card\"]").on('change', function(evt){
+      returnPer = $(evt.target).val();
+    });
+
     var cardChoicesBlock = dialog.find(".pgf-card-choices");
     var cardSelectedBlock = dialog.find(".pgf-cards-chosen");
-    cardSelectedBlock.css({height: "90px"});
+    cardSelectedBlock.css({height: "200px"});
     var selectedCards = [];
     var selectedCardsAuc = [];
 
@@ -36,11 +86,77 @@ function replaceCardsBlock(){
     spanResult.css({"display": "block"});
     spanResult.html("Результат:");
     var spanResultCombine = $(document.createElement("div"));
+    spanResultCombine.css({"margin-top": "15px", "max-height": "90px", "overflow-y": "auto"});
     oldCombineBtn.parent().append(spanResult);
     oldCombineBtn.parent().append(combineBtn);
     oldCombineBtn.parent().append(spanResultCombine);
     oldCombineBtn.remove();
 
+    function resetCauldron () {
+      cauldron = {
+        raritiesNumber: {
+          0: {
+            auction: 0,
+            notAuction: 0
+          },
+          1: {
+            auction: 0,
+            notAuction: 0
+          },
+          2: {
+            auction: 0,
+            notAuction: 0
+          },
+          3: {
+            auction: 0,
+            notAuction: 0
+          },
+          4: {
+            auction: 0,
+            notAuction: 0
+          }
+        },
+        raritiesCards: {
+          0: {},
+          1: {},
+          2: {},
+          3: {},
+          4: {}
+        }
+      };
+    }
+
+    var cauldron = {
+      raritiesNumber: {
+        0: {
+          auction: 0,
+          notAuction: 0
+        },
+        1: {
+          auction: 0,
+          notAuction: 0
+        },
+        2: {
+          auction: 0,
+          notAuction: 0
+        },
+        3: {
+          auction: 0,
+          notAuction: 0
+        },
+        4: {
+          auction: 0,
+          notAuction: 0
+        }
+      },
+      raritiesCards: {
+        0: {},
+        1: {},
+        2: {},
+        3: {},
+        4: {}
+      }
+    };
 
 
 
@@ -78,7 +194,7 @@ function replaceCardsBlock(){
                 var li = $(document.createElement('li'));
                 li.attr('data-original-title','');
                 li.addClass(n%2==0?'odd':'even');
-                li.append("<a href=\"javascript:void(0);\" data-card-auction=\"false\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" * ("+card.notAuctionNumber+")</a>");
+                li.append("<a href=\"javascript:void(0);\" data-card-number=\""+card.notAuctionNumber+"\" data-card-auction=\"false\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" * ("+card.notAuctionNumber+")</a>");
                 cardChoicesBlock.append(li);
                 var tooltipClass = 'pgf-card-tooltip';
                 var tooltip = pgf.game.widgets.CreateCardTooltip({
@@ -94,7 +210,7 @@ function replaceCardsBlock(){
                 var li = $(document.createElement('li'));
                 li.attr('data-original-title','');
                 li.addClass(n%2==0?'odd':'even');
-                li.append("<a href=\"javascript:void(0);\" data-card-auction=\"true\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" ("+card.auctionNumber+")</a>");
+                li.append("<a href=\"javascript:void(0);\" data-card-number=\""+card.auctionNumber+"\" data-card-auction=\"true\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" ("+card.auctionNumber+")</a>");
                 cardChoicesBlock.append(li);
                 var tooltipClass = 'pgf-card-tooltip';
                 var tooltip = pgf.game.widgets.CreateCardTooltip({
@@ -115,78 +231,44 @@ function replaceCardsBlock(){
         if (combineProcess) {
           return;
         }
+
+        var move = selectPer;
+
         var cardLink = $(e.target);
-        var push = false;
-        var clear = false;
-        var cardName = cardLink.attr('data-card-name');
-        var cardAuc = cardLink.attr('data-card-auction') == "true";
+        var cardInfo = processedCards[cardLink.data('card-name')];
+        var cardAuction = cardLink.data('card-auction');
 
-        if (cardLink.hasClass("ext-all-used-cards") || cardLink.hasClass("ext-missing-card")) {
-          return;
-        }
-
-        if (typeof processedCards[cardName] == 'undefined') {
-          cardLink.addClass('ext-missing-card');
-          return;
-        }
-
-        if (selectedCards.length == 0 || processedCards[selectedCards[0]].rarity != processedCards[cardName].rarity) {
-          combineBtn.button('more');
-          push = true;
-          selectedCards = [];
-          selectedCardsAuc = [];
-          selectedCards.push(cardName);
-          selectedCardsAuc.push(cardAuc);
-        } else if (selectedCards.length < 3) {
-          if (selectedCards.length < 2 || processedCards[selectedCards[0]].rarity != 4) {
-            selectedCards.push(cardName);
-            selectedCardsAuc.push(cardAuc);
-            push = true;
+        if (cardAuction) {
+          if (typeof cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] == 'undefined') {
+            cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] = {auction: 0, notAuction: 0};
           }
-          combineBtn.button('reset');
-        }
-        if (selectedCards.length == 1) {
-          clear = true;
-        }
-        if (clear) {
-          cardSelectedBlock.find("li[data-original-title]").remove();
-        }
-        if (push) {
-          var li = $(document.createElement('li'));
-          li.addClass(n%2==0?'odd':'even');
-          li.attr('data-original-title','');
+          if (cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction >= cardInfo.auctionNumber) {
+            return;
+          }
 
-          li.append("<a href=\"javascript:void(0);\" data-card-auction=\""+cardAuc+"\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[processedCards[cardName].rarity]+"\" style=\"font-size:10pt\">"+cardName+ (cardAuc?"":" *") +"</a>");
-          var tooltipClass = 'pgf-card-tooltip';
-          var tooltip = pgf.game.widgets.CreateCardTooltip({
-            type: processedCards[cardName].type,
-            rarity: processedCards[cardName].rarity,
-            name: cardName,
-            auction: cardAuc
-          }, tooltipClass);
-          pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
-          cardSelectedBlock.append(li);
-          li.find("a").on('click', function(evt){
-            if (combineProcess) {
-              return;
-            }
-            var $el = $(evt.target);
-            var cardName = $el.attr('data-card-name');
-            var cardAuction = $el.attr('data-card-auction') == "true";
-            for (var i = 0; i < selectedCards.length; i++) {
-              if (selectedCards[i] == cardName && selectedCardsAuc[i] == cardAuction) {
-                selectedCards.splice(i, 1);
-                selectedCardsAuc.splice(i, 1);
-                break;
-              }
-            }
-            $el.remove();
-            updateChoseList(selectedCards, selectedCardsAuc);
-          });
+          move = Math.min(move, cardInfo.auctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction);
 
-          updateChoseList(selectedCards, selectedCardsAuc);
+          cauldron.raritiesNumber[cardInfo.rarity].auction += move;
+          cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction += move;
 
+          cardLink.text(cardLink.data('card-name') + " ("+(cardInfo.auctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction)+")");
+        } else {
+          if (typeof cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] == 'undefined') {
+            cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] = {auction: 0, notAuction: 0};
+          }
+          if (cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction >= cardInfo.notAuctionNumber) {
+            return;
+          }
+
+          move = Math.min(move, cardInfo.notAuctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction);
+
+          cauldron.raritiesNumber[cardInfo.rarity].notAuction += move;
+          cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction += move;
+
+          cardLink.text(cardLink.data('card-name') + " * ("+(cardInfo.notAuctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction)+")");
         }
+
+        updateChoseList(cauldron);
       });
     }
 
@@ -194,177 +276,320 @@ function replaceCardsBlock(){
       if (combineProcess) {
         return;
       }
-      if (selectedCards.length > 1) {
-        combineProcess = true;
-        var cardUids = [];
-        var needCards = selectedCards.length;
-        for (var cardName in processedCards) {
-          do {
-            var i = selectedCards.indexOf(cardName);
-            if (i != -1) {
-              if (selectedCardsAuc[i]) {
-                cardUids.push(processedCards[cardName].auctionUids.pop());
-                processedCards[cardName].auctionNumber--;
-              } else {
-                cardUids.push(processedCards[cardName].notAuctionUids.pop());
-                processedCards[cardName].notAuctionNumber--;
-              }
-              selectedCards.splice(i, 1);
-              selectedCardsAuc.splice(i, 1);
+
+      var combineSize = 3;
+
+      combineBtn.button('loading');
+      combineProcess = true;
+
+      var rarity, cardName;
+
+      var combineRarityPool;
+      var combineSchedule = [];
+      var combineBlock;
+      var combineAuction;
+      var rarityCombineSize;
+
+      for (rarity in cauldron.raritiesCards) {
+        rarityCombineSize = rarity==4?2:combineSize;
+        combineRarityPool = [];
+        for (var stage = 0; stage < 2; stage++) {
+          combineAuction = stage == 0;
+          for (cardName in cauldron.raritiesCards[rarity]) {
+            if (combineAuction) {
+              combineRarityPool = combineRarityPool.concat(processedCards[cardName].auctionUids.slice(0, cauldron.raritiesCards[rarity][cardName].auction));
+            } else {
+              combineRarityPool = combineRarityPool.concat(processedCards[cardName].notAuctionUids.slice(0, cauldron.raritiesCards[rarity][cardName].notAuction));
             }
-          } while (i != -1);
-          if (selectedCards.length == 0) {
-            break;
+          }
+          combineBlock = [];
+          while (combineRarityPool.length + combineBlock.length >= rarityCombineSize) {
+            combineBlock.push(combineRarityPool.pop());
+            if (combineBlock.length == rarityCombineSize) {
+              combineSchedule.push(combineBlock);
+              combineBlock = [];
+            }
           }
         }
-        if (cardUids.length != needCards) {
-          combineProcess = false;
-          spanResultCombine.html("Ошибка: Выбранные карты не были найдены в пуле карт. Пересоберите комбинацию.");
-          selectedCards = [];
-          selectedCardsAuc = [];
-          cardSelectedBlock.find("li[data-original-title]").remove();
-          rebuildChoseList();
-          updateChoseList(selectedCards, selectedCardsAuc);
-          return;
-        }
+      }
 
-        selectedCards = [];
-        selectedCardsAuc = [];
 
-        function checkStatus(url) {
-          $.ajax({
-            url: url,
-            type: "get",
-            success: function (res) {
-              if (res.status == "ok") {
-                if (res.data.card_ui_info) {
-                  var rawCards = res.data.card_ui_info;
-                  if (typeof processedCards[rawCards.name] == 'undefined') {
-                    processedCards[rawCards.name] = {
-                      auctionNumber: 0,
-                      notAuctionNumber: 0,
-                      name: rawCards.name,
-                      rarity: rawCards.rarity,
-                      type: rawCards.type,
-                      auctionUids: [],
-                      notAuctionUids: []
-                    }
-                  }
-                  if (rawCards.auction) {
-                    processedCards[rawCards.name].auctionNumber++;
-                    processedCards[rawCards.name].auctionUids.push(rawCards.uid);
-                  } else {
-                    processedCards[rawCards.name].notAuctionNumber++;
-                    processedCards[rawCards.name].notAuctionUids.push(rawCards.uid);
+      function checkStatus(url) {
+        $.ajax({
+          url: url,
+          type: "get",
+          success: function (res) {
+            if (res.status == "ok") {
+              if (res.data.card_ui_info) {
+                var rawCards = res.data.card_ui_info;
+                cardsIdMap[rawCards.uid] = rawCards;
+                if (typeof processedCards[rawCards.name] == 'undefined') {
+                  processedCards[rawCards.name] = {
+                    auctionNumber: 0,
+                    notAuctionNumber: 0,
+                    name: rawCards.name,
+                    rarity: rawCards.rarity,
+                    type: rawCards.type,
+                    auctionUids: [],
+                    notAuctionUids: []
                   }
                 }
-                spanResultCombine.html(res.data.message);
-                combineProcess = false;
-                combineBtn.button('select');
-                cardSelectedBlock.find("li[data-original-title]").remove();
-                rebuildChoseList();
-                updateChoseList(selectedCards, selectedCardsAuc);
-              } else if (res.status == 'processing') {
-                setTimeout(function () {
-                  checkStatus(res.status_url);
-                }, 700);
-              } else if (res.status == 'error') {
-                combineProcess = false;
-                rebuildChoseList();
-                spanResultCombine.html("<strong>Ошибка:</strong> " + res.error);
+                if (rawCards.auction) {
+                  processedCards[rawCards.name].auctionNumber++;
+                  processedCards[rawCards.name].auctionUids.push(rawCards.uid);
+                } else {
+                  processedCards[rawCards.name].notAuctionNumber++;
+                  processedCards[rawCards.name].notAuctionUids.push(rawCards.uid);
+                }
+                var firstDiv = spanResultCombine.find('div:nth-child(1)');
+                var cardLabel = "<span class=\""+rarityLabelMap[rawCards.rarity]+"\">"+rawCards.name+(rawCards.auction?"":" *")+"</span>";
+                firstDiv.html(firstDiv.html().replace("...", cardLabel));
+                var spans = firstDiv.find("span");
+                var lastSpan = $(spans[spans.length-1]);
+
+                var tooltipClass = 'pgf-card-tooltip';
+                var tooltip = pgf.game.widgets.CreateCardTooltip({
+                  type: rawCards.type,
+                  rarity: rawCards.rarity,
+                  name: rawCards.name,
+                  auction: rawCards.auction
+                }, tooltipClass);
+                pgf.game.widgets.UpdateElementTooltip(lastSpan, tooltip, tooltipClass, cardTooltipArgs);
               }
+
+              if (combineSchedule.length > 0) {
+                combineNext();
+              } else {
+                combineProcess = false;
+                resetCauldron();
+                rebuildChoseList();
+                updateChoseList(cauldron);
+              }
+            } else if (res.status == 'processing') {
+              setTimeout(function () {
+                checkStatus(res.status_url);
+              }, 400);
+            } else if (res.status == 'error') {
+              combineProcess = false;
+              updateCards();
+              resetCauldron();
+              rebuildChoseList();
+              updateChoseList(cauldron);
+              var firstDiv = spanResultCombine.find('div:nth-child(1)');
+              firstDiv.html(firstDiv.html().replace("...", "Ошибка: " + JSON.stringify(res)));
             }
-          });
-        };
+          }
+        });
+      }
+
+      function combineNext() {
+        var combineBlock = combineSchedule.shift();
+        var combineCardsLabels = [];
+
+        for (var i = 0; i < combineBlock.length; i++) {
+          combineCardsLabels.push("<span class=\""+rarityLabelMap[cardsIdMap[combineBlock[i]].rarity]+"\">"
+            + cardsIdMap[combineBlock[i]].name + (cardsIdMap[combineBlock[i]].auction?"":"*")
+            + "</span>"
+          );
+        }
 
         $.ajax({
-          url: "/game/cards/api/combine?api_version=1.0&api_client=CrazyNigerTTE-0.3.5&cards=" + cardUids.join(','),
+          url: "/game/cards/api/combine?api_version=1.0&api_client=CrazyNigerTTE-0.3.5&cards=" + combineBlock.join(','),
           type: "post",
           method: "post",
           data: {},
           success: function(res) {
             if (res.status == 'processing') {
+              for (var i = 0; i < combineBlock.length; i++) {
+                var card = cardsIdMap[combineBlock[i]];
+                var cardInfo = processedCards[card.name];
+                if (card.auction) {
+                  cardInfo.auctionUids.splice(cardInfo.auctionUids.indexOf(card.uid),1);
+                  cardInfo.auctionNumber = cardInfo.auctionUids.length;
+                } else {
+                  cardInfo.notAuctionUids.splice(cardInfo.notAuctionUids.indexOf(card.uid),1);
+                  cardInfo.notAuctionNumber = cardInfo.notAuctionUids.length;
+                }
+              }
+
+
+              spanResultCombine.prepend("<div>"+combineCardsLabels.join(" + ") + " = ...</div>");
               setTimeout(function(){
                 checkStatus(res.status_url);
-              }, 300);
+              }, 200);
             } else {
+              combineBtn.button('select');
               combineProcess = false;
+              resetCauldron();
               rebuildChoseList();
-              updateChoseList(selectedCards, selectedCardsAuc);
+              updateChoseList(cauldron);
               spanResultCombine.html("<strong>Ошибка:</strong> " + res.error);
             }
 
           },
           error: function(res) {
             combineProcess = false;
+            combineBtn.button('select');
             cardSelectedBlock.find("li[data-original-title]").remove();
-            updateChoseList(selectedCards, selectedCardsAuc);
+            resetCauldron();
+            updateChoseList(cauldron);
           }
         });
       }
+
+      spanResultCombine.html("");
+      combineNext();
     });
 
     rebuildChoseList();
     var n = 0;
 
 
-    function updateChoseList(selectedCards, selectedCardsAuc)
-    {
-      var cardsNumb = {};
-      cardChoicesBlock.find("a.ext-all-used-cards").removeClass("ext-all-used-cards");
-
-      var rarityText = "";
-      if (selectedCards.length > 0) {
-        var rarityClass = rarityLabelMap[processedCards[selectedCards[0]].rarity];
-        var rarityName = rarityNameMap[processedCards[selectedCards[0]].rarity];
-        var auctionStatus = (selectedCardsAuc.indexOf(false) != -1) ? "не продаваемая" : "продаваемая";
-
-
-        if (selectedCards.length == 3) {
-          rarityClass = rarityLabelMap[processedCards[selectedCards[0]].rarity + 1];
-          rarityName = rarityNameMap[processedCards[selectedCards[0]].rarity + 1];
+    function updateChoseList(cauldron, combineNumber) {
+      if (typeof combineNumber == 'undefined') {
+        combineNumber = 3;
+      }
+      var totalInRarity, totalResultInRarity, accountInRarity;
+      var resultRarity, rarity;
+      var results = {
+        0: {
+          auction: 0,
+          notAuction: 0
+        },
+        1: {
+          auction: 0,
+          notAuction: 0
+        },
+        2: {
+          auction: 0,
+          notAuction: 0
+        },
+        3: {
+          auction: 0,
+          notAuction: 0
+        },
+        4: {
+          auction: 0,
+          notAuction: 0
         }
-        if (selectedCards.length >= 2) {
-          rarityText = "<strong class=\"" + rarityClass + "\">" + auctionStatus + " " + rarityName + "</strong>";
+      };
+      for (rarity in cauldron.raritiesNumber) {
+        totalInRarity = cauldron.raritiesNumber[rarity].auction + cauldron.raritiesNumber[rarity].notAuction;
+        totalResultInRarity = Math.floor(totalInRarity / ((rarity == 4)?2:combineNumber));
+        accountInRarity = Math.floor(cauldron.raritiesNumber[rarity].auction / ((rarity == 4)?2:combineNumber));
+
+        resultRarity = ((rarity == 4 || combineNumber==2)?rarity:(1*rarity + 1*1));
+
+        results[resultRarity].auction += accountInRarity;
+        results[resultRarity].notAuction += totalResultInRarity - accountInRarity;
+      }
+
+      var resultLabels = [];
+
+      for (var r in results) {
+        if (results[r].auction > 0) {
+          resultLabels.push("<span class=\""+rarityLabelMap[r]+"\">продаваемая "+rarityNameMap[r]+" x"+results[r].auction+"</span>");
+        }
+        if (results[r].notAuction > 0) {
+          resultLabels.push("<span class=\""+rarityLabelMap[r]+"\">не продаваемая "+rarityNameMap[r]+" x"+results[r].notAuction+"</span>");
         }
       }
 
-      spanResult.html("Результат: " + rarityText);
-
-      switch (selectedCards.length) {
-        case 0:
-          combineBtn.button('select');
-          break;
-        case 1:
-          combineBtn.button('more');
-          break;
-        case 2:
-        case 3:
-          combineBtn.button('reset');
-          break;
+      if (resultLabels.length != 0) {
+        combineBtn.button('reset');
+      } else {
+        combineBtn.button('select');
       }
 
-      for (var i = 0; i < selectedCards.length;i++) {
-        if (typeof cardsNumb[selectedCards[i]+"-"+selectedCardsAuc[i]] == 'undefined') {
-          cardsNumb[selectedCards[i]+"-"+selectedCardsAuc[i]] = 0;
-        }
-        cardsNumb[selectedCards[i]+"-"+selectedCardsAuc[i]]++;
-        if (cardsNumb[selectedCards[i]+"-false"] >= processedCards[selectedCards[i]].notAuctionNumber) {
-          cardChoicesBlock.find("a[data-card-name=\""+selectedCards[i]+"\"][data-card-auction=false]").addClass("ext-all-used-cards");
-        }
-        if (cardsNumb[selectedCards[i]+"-true"] >= processedCards[selectedCards[i]].auctionNumber) {
-          cardChoicesBlock.find("a[data-card-name=\""+selectedCards[i]+"\"][data-card-auction=true]").addClass("ext-all-used-cards");
+      spanResult.html("Результат: " + resultLabels.join(", "));
+
+      var cardName, li, card, cauldronCard;
+
+      cardSelectedBlock.find('li[data-original-title]').remove();
+
+      for (rarity in cauldron.raritiesCards) {
+        for (cardName in cauldron.raritiesCards[rarity]) {
+          card = processedCards[cardName];
+          cauldronCard = cauldron.raritiesCards[rarity][cardName];
+          if (cauldronCard.auction > 0) {
+            li = $(document.createElement('li'));
+            li.attr('data-original-title','');
+            li.append("<a href=\"javascript:void(0);\" class=\""+rarityLabelMap[rarity]+"\"  data-card-auction=\"true\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" ("+cauldronCard.auction+")</a>");
+            var tooltipClass = 'pgf-card-tooltip';
+            var tooltip = pgf.game.widgets.CreateCardTooltip({
+              type: card.type,
+              rarity: card.rarity,
+              name: card.name,
+              auction: true
+            }, tooltipClass);
+            pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
+            cardSelectedBlock.append(li);
+          }
+          if (cauldronCard.notAuction > 0) {
+            li = $(document.createElement('li'));
+            li.attr('data-original-title','');
+            li.append("<a href=\"javascript:void(0);\" class=\""+rarityLabelMap[rarity]+"\" data-card-auction=\"false\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" * ("+cauldronCard.notAuction+")</a>");
+            var tooltipClass = 'pgf-card-tooltip';
+            var tooltip = pgf.game.widgets.CreateCardTooltip({
+              type: card.type,
+              rarity: card.rarity,
+              name: card.name,
+              auction: false
+            }, tooltipClass);
+            pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
+            cardSelectedBlock.append(li);
+          }
         }
       }
+
+      var links = cardSelectedBlock.find("a");
+      links.on('click', function(e){
+        if (combineProcess) {
+          return;
+        }
+        var $link = $(e.target);
+        var cardName = $link.data('card-name');
+        var cardAuction = $link.data('card-auction');
+        var cardRarity = processedCards[cardName].rarity;
+
+        var cardLeft = 0;
+
+        var move = returnPer;
+
+        if (cardAuction) {
+          move = Math.min(move, cauldron.raritiesCards[cardRarity][cardName].auction);
+          cauldron.raritiesNumber[cardRarity].auction -= move;
+          cauldron.raritiesCards[cardRarity][cardName].auction -= move;
+
+          cardLeft = processedCards[cardName].auctionNumber - cauldron.raritiesCards[cardRarity][cardName].auction;
+        } else {
+          move = Math.min(move, cauldron.raritiesCards[cardRarity][cardName].notAuction);
+          cauldron.raritiesNumber[cardRarity].notAuction -= move;
+          cauldron.raritiesCards[cardRarity][cardName].notAuction -= move;
+          cardLeft = processedCards[cardName].notAuctionNumber - cauldron.raritiesCards[cardRarity][cardName].notAuction;
+        }
+
+        var $a = cardChoicesBlock.find("a[data-card-name=\""+cardName+"\"][data-card-auction="+cardAuction+"]");
+        $a.text(cardName + (cardAuction?"":" *") +" ("+cardLeft+")");
+
+        updateChoseList(cauldron);
+      });
     }
 
   };
 
-  function modifiedShowCards(container, filterUIDs) {
-    var rawCards = this.GetCards();
+  var cardsIdMap = {};
+
+  var _instance = null;
+
+  function updateCards()
+  {
+    var rawCards = _instance.GetCards();
     processedCards = {};
+    cardsIdMap = {};
     if (rawCards) {
       for (var i = 0; i < rawCards.length; i++) {
+        cardsIdMap[rawCards[i].uid] = rawCards[i];
         if (typeof processedCards[rawCards[i].name] == 'undefined') {
           processedCards[rawCards[i].name] = {
             auctionNumber: 0,
@@ -385,6 +610,12 @@ function replaceCardsBlock(){
         }
       }
     }
+  }
+
+  function modifiedShowCards(container, filterUIDs) {
+    _instance = this;
+    updateCards();
+
     var n = 0;
     var cardTooltipArgs = jQuery.extend({}, pgf.base.tooltipsArgs);
     cardTooltipArgs.placement = function(tip, element) {
