@@ -162,10 +162,9 @@ function replaceCardsBlock(){
 
     combineBtn.addClass("btn");
     combineBtn.addClass("btn-success");
-    combineBtn.addClass("btn-disabled");
     combineBtn.css({"width": "100%"});
-    combineBtn.attr('data-select-text', 'Выберите карты для объедения');
-    combineBtn.attr('data-more-text', 'Выберите ещу одну или две');
+    combineBtn.attr('data-select-text', 'Выберите карты для объединия');
+    combineBtn.attr('data-loading-text', 'Объединяю карты, ждите ...');
 
     var cardTooltipArgs = jQuery.extend({}, pgf.base.tooltipsArgs);
     cardTooltipArgs.placement = function(tip, element) {
