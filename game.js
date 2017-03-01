@@ -182,7 +182,9 @@ function replaceCardsBlock(){
 
     function rebuildChoseList() {
       var n = 0;
+      $(".tooltip").remove();
       cardChoicesBlock.find('li[data-original-title]').remove();
+
       for (var rarity = 0; rarity <= 4; rarity++) {
         for (var cardName in processedCards) {
           if (processedCards.hasOwnProperty(cardName)) {
@@ -429,6 +431,7 @@ function replaceCardsBlock(){
           error: function(res) {
             combineProcess = false;
             combineBtn.button('select');
+            $(".tooltip").remove();
             cardSelectedBlock.find("li[data-original-title]").remove();
             resetCauldron();
             updateChoseList(cauldron);
@@ -504,6 +507,7 @@ function replaceCardsBlock(){
 
       var cardName, li, card, cauldronCard;
 
+      $(".tooltip").remove();
       cardSelectedBlock.find('li[data-original-title]').remove();
 
       for (rarity in cauldron.raritiesCards) {
@@ -625,6 +629,7 @@ function replaceCardsBlock(){
       return 'right';
     };
 
+    $(".tooltip").remove();
     container.find('li[data-original-title]').remove();
     for (var rarity = 0; rarity <= 4; rarity++) {
       for (var cardName in processedCards) {
