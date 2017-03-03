@@ -157,7 +157,6 @@ function replaceTradeDialog()
     }
     originalFunc(params);
   };
-
 }
 
 setTimeout(function(){

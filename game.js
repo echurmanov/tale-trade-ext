@@ -158,8 +158,6 @@ function replaceCardsBlock(){
       }
     };
 
-
-
     combineBtn.addClass("btn");
     combineBtn.addClass("btn-success");
     combineBtn.css({"width": "100%"});

@@ -1,15 +1,20 @@
 {
   "manifest_version": 2,
   "name": "The Tale Trade Ext",
-  "version": "0.3.9",
+  "version": "0.4.0",
   "description": "Расширение для Сказки, улчушающая работу с рынком и Картами Судьбы.",
   "icons": { "128": "icon.png" },
   "permissions": ["http://the-tale.org/*", "http://tale-ext.webtricks.pro/*"],
   "content_scripts": [
     {
-      "matches": ["http://the-tale.org/market/*"],
+      "matches": ["http://the-tale.org/market/+"],
       "css": ["mystyles.css"],
       "js": ["lib/jquery-2.min.js", "lib/bootstrap.min.js", "market.js"]
+    },
+    {
+      "matches": ["http://the-tale.org/market/"],
+      "css": ["mystyles.css"],
+      "js": ["lib/jquery-2.min.js", "lib/bootstrap.min.js", "market-watch.js"]
     },
     {
       "matches": ["http://the-tale.org/game/*"],
