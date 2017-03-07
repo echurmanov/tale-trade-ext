@@ -26,6 +26,11 @@ function getMinPriceLot(prevValue, currentValue) {
   return prevValue;
 }
 
+function clickCardLabel(evt) {
+  var el = $(evt.currentTarget);
+  $(el.data('target')).toggleClass('in');
+}
+
 function syncMarketTable(data) {
   var cardsArray = valuesToArray(data);
   var blockedCards = cardsArray.sort(function(a,b){
@@ -51,21 +56,42 @@ function syncMarketTable(data) {
     if (currentEl.length > 0) {
 
     } else {
+      console.log(lot);
+      var lotsList = '';
+      lot.lots.forEach(function(lot){
+        lotsList += `<tr id="direct-lot-${lot.lotId}"><td></td><td width="100">${lot.price} <img src="//static.the-tale.org/static/229/images/cookies.png" style="vertical-align: middle;"></td><td width="100">${lot.timeLeft}</td><td width="100"><a href="/market/${lot.lotId}/purchase" class="btn btn-success pgf-purchase-lot" data-loading-text="Обработка..." data-dialog-id="pgf-purchase-dialog-${quickLotId}" data-success-message="Поздравляем! Вы успешно приобрели «${lot.cardName}»!">купить лот</a></td></tr>`
+      });
       currentEl = $(`<tr data-card="${lot.cardName}">
-  <td><span class="${lot.rarity}-card-label" style="cursor: pointer;" data-toggle="tooltip" title="${lot.description}">${lot.cardName}</span></td>
-  <td>${lot.lots.length}</td>
-  <td><span style="cursor: pointer;" data-toggle="tooltip" title="от ${lot.minPrice} до ${lot.maxPrice}, средняя: ${lot.avgPrice}">от ${lot.minPrice}</span>
+  <td>
+    <span class="${lot.rarity}-card-label" data-target="#${lot.cardName.replace(/ /g,'-')}" style="cursor: pointer;" data-toggle="tooltip" title="${lot.description}">${lot.cardName}</span>
+    <div class="collapse" id="${lot.cardName.replace(/ /g,'-')}">
+        <table class="table table-stripped">
+          ${lotsList}
+        </table>
+    </div>
+  </td>
+  <td>
+  <span style="cursor: pointer;" data-toggle="tooltip" title="от ${lot.minPrice} до ${lot.maxPrice}, средняя: ${lot.avgPrice}">
+  ${lot.lots.length} шт. от ${lot.minPrice}</span>
+  <img src="//static.the-tale.org/static/229/images/cookies.png" style="vertical-align: middle;">
   </td>
   <td>
   <a href="/market/${quickLotId.lotId}/purchase" class="btn btn-success pgf-purchase-lot" data-loading-text="Обработка..." data-dialog-id="pgf-purchase-dialog-${quickLotId}" data-success-message="Поздравляем! Вы успешно приобрели «${lot.cardName}»!">купить по минимальной цене</a>
   </td></tr>
+
+
 `);
       table.append(currentEl);
     }
 
+
   });
 
   table.find('[data-toggle="tooltip"]').tooltip();
+
+  table.find('span[data-target]').each(function(idx, el){
+    $(el).on('click', clickCardLabel)
+  });
 
 
   var inject = `
@@ -128,8 +154,7 @@ function removeOriginalTable() {
   marketTable.append(`<thead>
   <tr>
     <th>название</th>
-    <th width="100">количество</th>
-    <th width="100">цены</th>
+    <th width="180">количество и цены</th>
     <th width="200">операции</th>
   </tr>
 </thead>`);

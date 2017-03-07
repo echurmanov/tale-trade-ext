@@ -7,7 +7,7 @@
   "permissions": ["http://the-tale.org/*", "http://tale-ext.webtricks.pro/*"],
   "content_scripts": [
     {
-      "matches": ["http://the-tale.org/market/+"],
+      "matches": ["http://the-tale.org/market/new","http://the-tale.org/market/history"],
       "css": ["mystyles.css"],
       "js": ["lib/jquery-2.min.js", "lib/bootstrap.min.js", "market.js"]
     },
