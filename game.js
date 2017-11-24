@@ -1,682 +1,632 @@
 
+function inject() {
+    pgf.game.widgets.CARDS_TRANSFORMATOR_DIALOG = `
+<div class="modal hide">
 
-function replaceCardsBlock(){
-  var instance = widgets.actions;
-
-  var rarityLabelMap = {
-    0: 'common-card-label',
-    1: 'uncommon-card-label',
-    2: 'rare-card-label',
-    3: 'epic-card-label',
-    4: 'legendary-card-label'
-  };
-
-  var rarityNameMap = {
-    0: 'обычная',
-    1: 'не обычная',
-    2: 'редкая',
-    3: 'эпическая',
-    4: 'легендарная'
-  };
-
-  var processedCards = {};
-
-  var originCombineDialogFn = pgf.game.CombineCardsDialog;
-  pgf.game.CombineCardsDialog = function(dialog) {
-
-    var tableHeader = dialog.find("table>thead");
-    tableHeader.append(`<tr>
-<th>
-<span style="float:left">Возвращать по: </span>
-  <div class="btn-group btn-group-xs" role="group" data-toggle="buttons">
-    <label class="btn btn-success active">
-      <input type="radio" name="return-card" id="return-card-1" autocomplete="off" checked value="1">1
-    </label>
-    <label class="btn btn-success">
-      <input type="radio" name="return-card" id="return-card-5" autocomplete="off" value="5">5
-    </label>
-    <label class="btn btn-success">
-      <input type="radio" name="return-card" id="return-card-10" autocomplete="off" value="10">10
-    </label>
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">×</button>
+    <h3 class="pgf-dialog-title dialog-title">Превращение карт</h3>
   </div>
-</th>
-<th>
-  <span style="float:left">Перемещать по: </span>
-  <div class="btn-group btn-group-xs" role="group" data-toggle="buttons">
-    <label class="btn btn-success active">
-      <input type="radio" name="select-card" id="select-card-1" autocomplete="off" checked value="1">1
-    </label>
-    <label class="btn btn-success">
-      <input type="radio" name="select-card" id="select-card-5" autocomplete="off" value="5">5
-    </label>
-    <label class="btn btn-success">
-      <input type="radio" name="select-card" id="select-card-10" autocomplete="off" value="10">10
-    </label>
+
+  <div class="modal-body">
+    <div class="accordion"id="tte-card-combine-block">
+        <div class="accordion-group">
+            <div class="accordion-heading">
+                <a href="#tte-card-combine-info" class="accordion-toggle" data-toggle="collapse" data-parent="#tte-card-combine-block">
+                    Карты можно превращать друг в друга.
+                </a>
+            </div>
+            <div id="tte-card-combine-info"  class="accordion-body collapse">
+                <div class="accordion-inner">
+                    <ul>
+                        <li>Одна карта превращается в случайную карту меньшей редкости.</li>
+                        <li>Две карты одной редкости превращаются в случайную карту той же редкости.</li>
+                        <li>Три карты одной редкости превращаются в случайную карту большей редкости.</li>
+                        <li>Часть карт можно превращать по особым правилам, указанным в описании карт.</li>
+                        <li>Если всеми превращаемыми картами можно торговать на рынке, то и новой картой можно будет торговать на рынке.</li>
+                        <li>Первыми в обмен отправляются непродаваемые карты.</li>
+                        <li>Первыми из обмена забираются продаваемые карты.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-group">
+            <div class="accordion-heading">
+                <a href="#tte-card-combine-settings" class="accordion-toggle"  data-toggle="collapse" data-parent="#tte-card-combine-block">
+                    Настройки объеденения
+                </a>
+            </div>
+            <div id="tte-card-combine-settings"  class="accordion-body collapse in">
+                <div class="accordion-inner">
+                    <div class="row">
+                        <div class="span3">
+                        <form class="" id="tte-card-combine-settings-form">
+                            <div class="control-group">
+                                <label class="control-label">Объеденять группами: </label>
+                                <div class="control inline">
+                                    <label class="radio inline">
+                                      <input type="radio"  value="1" name="group-size"> по 1
+                                    </label>
+                                    <label class="radio inline">
+                                      <input type="radio"  value="2" name="group-size"> по 2
+                                    </label>
+                                    <label class="radio inline">
+                                      <input type="radio"  value="3" name="group-size" checked> по 3
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">Карты одного типа: </label>
+                                <div class="control inline">
+                                    <label class="radio inline">
+                                      <input type="radio" value="combine" name="same-type" checked> объеденять
+                                    </label>
+                                    <label class="radio inline">
+                                      <input type="radio" value="not-combine" name="same-type" > НЕ объеденять
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                        </div>
+                        <div class="span2">
+                            <p>Текст</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table width="100%">
+      <thead>
+        <tr>
+          <th colspan="2">Карты для превращения</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td width="80%">
+            <ul class="pgf-cards-in-transformator pgf-scrollable unstyled" style="height: 60px; overflow-y: auto;">
+              <li class="pgf-template">
+                <a href="#"
+                   class="pgf-card-link"
+                   style="font-size: 10pt;">
+                   <span class="pgf-number" style="color: black;">1</span> x <span class="pgf-card-record"></span>
+                </a>
+              </li>
+            </div>
+          </td>
+          <td style="vertical-align: middle;">
+            <button class="pgf-transform-button pgf-disabled disabled btn btn-large btn-success" type="button">Превратить</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+
+    <table width="100%">
+      <thead>
+        <tr>
+          <th>Карты в руке</th>
+          <th width="50%">Карты в хранилище</th>
+        </tr>
+
+      </thead>
+        <tr>
+          <td colspan="2" >
+            <div class="btn-group" style="display:flex; justify-content:center;" data-toggle="buttons-radio" id="tte-move-card-block-size">
+              <button type="button" class="btn btn-primary active" data-number="1">1</button>
+              <button type="button" class="btn btn-primary" data-number="2">2</button>
+              <button type="button" class="btn btn-primary" data-number="3">3</button>
+              <button type="button" class="btn btn-primary" data-number="6">6</button>
+              <button type="button" class="btn btn-primary" data-number="10">10</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="vertical-align: top;">
+            <ul class="pgf-cards-in-hand pgf-scrollable unstyled" style="height: 200px; overflow-y: auto;">
+              <li class="pgf-template">
+                <a href="#"
+                   class="pgf-card-link"
+                   style="font-size: 10pt;">
+                   <span class="pgf-number" style="color: black;">1</span> x <span class="pgf-card-record"></span>
+                </a>
+              </li>
+            </ul>
+          </td>
+          <td style="vertical-align: top;">
+            <ul class="pgf-cards-in-storage pgf-scrollable unstyled" style="height: 200px; overflow-y: auto;">
+              <li class="pgf-template">
+                <a href="#"
+                   class="pgf-card-link"
+                   style="font-size: 10pt;">
+                   <span class="pgf-number" style="color: black;">1</span> x <span class="pgf-card-record"></span>
+                </a>
+              </li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
   </div>
-</th>
-</tr>`);
 
+</div>
+`;
 
-    var selectPer = 1;
-    var returnPer = 1;
+  pgf.game.widgets.Cards = function (params) {
 
-    dialog.find("label.btn > input").parent().on('click', function(evt){
-      var input = $(evt.target).find("input");
-      input.trigger('click');
-    });
+    var instance = this;
 
-    dialog.find("input[name=\"select-card\"]").on('change', function(evt){
-      selectPer = $(evt.target).val();
-    });
+    instance.data = {cards: {},
+      hand: [],
+      storage: [],
+      transformator: [],
+      cardsInTransformator: []};
 
-    dialog.find("input[name=\"return-card\"]").on('change', function(evt){
-      returnPer = $(evt.target).val();
-    });
+    var localVersion = 0;
+    var firstRequest = true;
 
-    var cardChoicesBlock = dialog.find(".pgf-card-choices");
-    var cardSelectedBlock = dialog.find(".pgf-cards-chosen");
-    cardSelectedBlock.css({height: "200px"});
-    var selectedCards = [];
-    var selectedCardsAuc = [];
+    function Refresh() {
+      instance.data.hand = [];
+      instance.data.storage = [];
+      instance.data.transformator = [];
 
-    var oldCombineBtn = dialog.find(".pgf-do-combine-cards");
-    var combineBtn = $(document.createElement('button'));
-    combineBtn.text(oldCombineBtn.text());
-    var spanResult = $(document.createElement("span"));
-    spanResult.css({"display": "block"});
-    spanResult.html("Результат:");
-    var spanResultCombine = $(document.createElement("div"));
-    spanResultCombine.css({"margin-top": "15px", "max-height": "90px", "overflow-y": "auto"});
-    oldCombineBtn.parent().append(spanResult);
-    oldCombineBtn.parent().append(combineBtn);
-    oldCombineBtn.parent().append(spanResultCombine);
-    oldCombineBtn.remove();
+      for (var i in instance.data.cards) {
+        var card = instance.data.cards[i];
 
-    function resetCauldron () {
-      cauldron = {
-        raritiesNumber: {
-          0: {
-            auction: 0,
-            notAuction: 0
-          },
-          1: {
-            auction: 0,
-            notAuction: 0
-          },
-          2: {
-            auction: 0,
-            notAuction: 0
-          },
-          3: {
-            auction: 0,
-            notAuction: 0
-          },
-          4: {
-            auction: 0,
-            notAuction: 0
-          }
-        },
-        raritiesCards: {
-          0: {},
-          1: {},
-          2: {},
-          3: {},
-          4: {}
+        if (jQuery.inArray(card.uid, instance.data.cardsInTransformator) != -1) {
+          instance.data.transformator.push(card)
+          continue;
         }
-      };
+
+        if (card.in_storage) {
+          instance.data.storage.push(card);
+        }
+        else {
+          instance.data.hand.push(card);
+        }
+      }
     }
 
-    var cauldron = {
-      raritiesNumber: {
-        0: {
-          auction: 0,
-          notAuction: 0
+    this.GetCards = function() {
+
+      var requestedVersion = localVersion + 1;
+
+      jQuery.ajax({
+        dataType: 'json',
+        type: 'get',
+        url: params.getItems,
+
+        success: function(data, request, status) {
+
+          if (requestedVersion <= localVersion) {
+            instance.GetCards();
+            return;
+          }
+
+          localVersion = requestedVersion;
+
+          var oldKeys = [];
+          var newKeys = [];
+
+          for (var uid in instance.data.cards)  {
+            oldKeys.push(uid);
+          }
+
+          for (var i in data.data.cards) {
+            var card = data.data.cards[i];
+            newKeys.push(card.uid);
+          }
+
+          oldKeys.sort();
+          newKeys.sort();
+
+          var cardsChanged = !(JSON.stringify(oldKeys) == JSON.stringify(newKeys));
+
+          instance.data.cards = {}
+
+          for (var i in data.data.cards) {
+            var card = data.data.cards[i];
+            instance.data.cards[card.uid] = card;
+          }
+
+          if (cardsChanged || firstRequest) {
+            Refresh();
+            jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+          }
+
+          firstRequest = false;
         },
-        1: {
-          auction: 0,
-          notAuction: 0
+        error: function() {
         },
-        2: {
-          auction: 0,
-          notAuction: 0
-        },
-        3: {
-          auction: 0,
-          notAuction: 0
-        },
-        4: {
-          auction: 0,
-          notAuction: 0
+        complete: function() {
         }
-      },
-      raritiesCards: {
-        0: {},
-        1: {},
-        2: {},
-        3: {},
-        4: {}
-      }
+      });
     };
 
-    combineBtn.addClass("btn");
-    combineBtn.addClass("btn-success");
-    combineBtn.css({"width": "100%"});
-    combineBtn.attr('data-select-text', 'Выберите карты для объединия');
-    combineBtn.attr('data-loading-text', 'Объединяю карты, ждите ...');
+    this.GetCard = function() {
+      pgf.forms.Post({ action: params.getCard,
+        OnSuccess: function(data){
+          jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
 
-    var cardTooltipArgs = jQuery.extend({}, pgf.base.tooltipsArgs);
-    cardTooltipArgs.placement = function(tip, element) {
-      var offset = jQuery(element).offset();
-      if (offset.left == 0 && offset.top == 0) {
-        jQuery(tip).addClass('pgf-hidden');
-      }
-      return 'right';
+          instance.GetCards();
+
+          pgf.ui.dialog.Alert({message: data.data.message,
+            title: 'Вы получаете новую карту!',
+            OnOk: function(e){}});
+          return;
+        }
+      });
     };
 
-    combineBtn.button('select');
+    this.RenderHand = function(widget) {
+      var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.hand);
+      pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
+    };
 
-    var combineProcess = false;
+    this.RenderStorage = function(widget) {
+      var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.storage);
+      pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
+    };
 
+    this.RenderTransformator = function(widget) {
+      var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.transformator);
+      pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
+    };
 
-    function rebuildChoseList() {
-      var n = 0;
-      $(".tooltip").remove();
-      cardChoicesBlock.find('li[data-original-title]').remove();
+    this.HasCardsInHand = function() {return instance.data.hand.length > 0;};
 
-      for (var rarity = 0; rarity <= 4; rarity++) {
-        for (var cardName in processedCards) {
-          if (processedCards.hasOwnProperty(cardName)) {
-            var card = processedCards[cardName];
-            if (card.rarity == rarity) {
-              var captionParts = [];
-              if (card.notAuctionNumber > 0) {
-                var li = $(document.createElement('li'));
-                li.attr('data-original-title','');
-                li.addClass(n%2==0?'odd':'even');
-                li.append("<a href=\"javascript:void(0);\" data-card-number=\""+card.notAuctionNumber+"\" data-card-auction=\"false\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" * ("+card.notAuctionNumber+")</a>");
-                cardChoicesBlock.append(li);
-                var tooltipClass = 'pgf-card-tooltip';
-                var tooltip = pgf.game.widgets.CreateCardTooltip({
-                  type: card.type,
-                  rarity: card.rarity,
-                  name: card.name,
-                  auction: false
-                }, tooltipClass);
-                pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
-                n++;
+    this.CanTransform = function() {
+      if (instance.BuildTransformPlan().length == 0) return false;
+
+      return true;
+    }
+
+    this.BuildTransformPlan = function () {
+      console.log(instance.data.transformator);
+      var i, j, card, targetGroup;
+      var combinePlane = [];
+      var candidateGroups = [];
+      var form = $("#tte-card-combine-settings-form").serializeArray().reduce(
+        function(prev, el) {
+          prev[el.name] = el.value;
+          return prev;
+        },
+        {}
+      );
+      console.log(form);
+      var groupSize = 1 * form['group-size'];
+      for (i = 0; i < instance.data.transformator.length; i++) {
+          card = instance.data.transformator[i];
+          targetGroup = null;
+          for (j = 0; j < candidateGroups.length && targetGroup === null; j++) {
+            if (form['same-type'] === 'combine') {
+              if (candidateGroups[j][0].full_type === card.full_type) {
+                targetGroup = candidateGroups[j];
               }
-              if (card.auctionNumber > 0) {
-                var li = $(document.createElement('li'));
-                li.attr('data-original-title','');
-                li.addClass(n%2==0?'odd':'even');
-                li.append("<a href=\"javascript:void(0);\" data-card-number=\""+card.auctionNumber+"\" data-card-auction=\"true\" data-card-name=\""+cardName+"\" class=\""+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" ("+card.auctionNumber+")</a>");
-                cardChoicesBlock.append(li);
-                var tooltipClass = 'pgf-card-tooltip';
-                var tooltip = pgf.game.widgets.CreateCardTooltip({
-                  type: card.type,
-                  rarity: card.rarity,
-                  name: card.name,
-                  auction: true
-                }, tooltipClass);
-                pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
-                n++;
+            } else if (form['same-type'] === 'not-combine'){
+              if (candidateGroups[j].length == 2 || candidateGroups[j][0].full_type !== card.full_type) {
+                targetGroup = candidateGroups[j];
               }
             }
           }
+
+          if (targetGroup === null) {
+              targetGroup = [];
+              candidateGroups.push(targetGroup);
+          }
+          targetGroup.push(card);
+          if (targetGroup.length === groupSize) {
+              if (targetGroup.length === 1 && card.rarity === 0) {
+                  continue;
+              }
+              combinePlane.push(targetGroup);
+              candidateGroups.splice(candidateGroups.indexOf(targetGroup), 1);
+          }
+      }
+      console.log("PLane", combinePlane);
+      return combinePlane;
+    };
+
+    this.OpenStorageDialog = function() {
+      pgf.ui.dialog.Create({ fromString: pgf.game.widgets.CARDS_STORAGE_DIALOG,
+        OnOpen: function(dialog) {
+          pgf.game.CardsStorageDialog(dialog, instance);
         }
+      });
+    };
+
+    this.OpenTransformatorDialog = function() {
+      pgf.ui.dialog.Create({ fromString: pgf.game.widgets.CARDS_TRANSFORMATOR_DIALOG,
+        OnOpen: function(dialog) {
+          pgf.game.CardsTransformatorDialog(dialog, instance);
+        }
+      });
+    };
+
+    var ChangeStorage = function(cardsIds, inStorage, url, errorMessage) {
+      localVersion += 1;
+
+      data = new FormData();
+
+      for (var i in cardsIds) {
+        var card = instance.data.cards[cardsIds[i]];
+        card.in_storage = inStorage;
+        data.append('card', card.uid);
       }
 
-      cardChoicesBlock.find('a').on('click', function(e){
-        if (combineProcess) {
-          return;
+      function Undo(message) {
+        localVersion += 1;
+
+        for (var i in cardsIds) {
+          instance.data.cards[cardsIds[i]].in_storage = false;
         }
 
-        var move = selectPer;
+        pgf.ui.dialog.Error({message: message});
 
-        var cardLink = $(e.target);
-        var cardInfo = processedCards[cardLink.data('card-name')];
-        var cardAuction = cardLink.data('card-auction');
+        Refresh();
 
-        if (cardAuction) {
-          if (typeof cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] == 'undefined') {
-            cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] = {auction: 0, notAuction: 0};
-          }
-          if (cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction >= cardInfo.auctionNumber) {
+        jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+      }
+
+      jQuery.ajax({
+        dataType: 'json',
+        type: 'post',
+        url: url,
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(data, request, status) {
+          if (data.status == 'error') {
+            Undo(data.error);
             return;
           }
 
-          move = Math.min(move, cardInfo.auctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction);
-
-          cauldron.raritiesNumber[cardInfo.rarity].auction += move;
-          cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction += move;
-
-          cardLink.text(cardLink.data('card-name') + " ("+(cardInfo.auctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].auction)+")");
-        } else {
-          if (typeof cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] == 'undefined') {
-            cauldron.raritiesCards[cardInfo.rarity][cardInfo.name] = {auction: 0, notAuction: 0};
-          }
-          if (cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction >= cardInfo.notAuctionNumber) {
-            return;
-          }
-
-          move = Math.min(move, cardInfo.notAuctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction);
-
-          cauldron.raritiesNumber[cardInfo.rarity].notAuction += move;
-          cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction += move;
-
-          cardLink.text(cardLink.data('card-name') + " * ("+(cardInfo.notAuctionNumber - cauldron.raritiesCards[cardInfo.rarity][cardInfo.name].notAuction)+")");
+          localVersion += 1;
+        },
+        error: function() {
+          Undo(errorMessage);
         }
-
-        updateChoseList(cauldron);
       });
-    }
 
-    combineBtn.on('click', function(){
-      if (combineProcess) {
+      Refresh();
+
+      jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+    };
+
+    this.ToStorage = function(cardsIds) {
+      ChangeStorage(cardsIds,
+        true,
+        params.moveToStorage,
+        'Неизвестная ошибка при перемещении карт в хранилище. Пожалуйста, обновите страницу.');
+    };
+
+    this.ToHand = function(cardsIds) {
+      ChangeStorage(cardsIds,
+        false,
+        params.moveToHand,
+        'Неизвестная ошибка при перемещении карт в руку. Пожалуйста, обновите страницу.');
+    };
+
+    this.ToTransformator = function(cardId) {
+      if (jQuery.inArray(cardId, instance.data.cardsInTransformator) != -1) {
         return;
       }
 
-      var combineSize = 3;
+      instance.data.cardsInTransformator.push(cardId);
 
-      combineBtn.button('loading');
-      combineProcess = true;
+      Refresh();
+    };
 
-      var rarity, cardName;
-
-      var combineRarityPool;
-      var combineSchedule = [];
-      var combineBlock;
-      var combineAuction;
-      var rarityCombineSize;
-
-      for (rarity in cauldron.raritiesCards) {
-        rarityCombineSize = rarity==4?2:combineSize;
-        combineRarityPool = [];
-        for (var stage = 0; stage < 2; stage++) {
-          combineAuction = stage == 0;
-          for (cardName in cauldron.raritiesCards[rarity]) {
-            if (combineAuction) {
-              combineRarityPool = combineRarityPool.concat(processedCards[cardName].auctionUids.slice(0, cauldron.raritiesCards[rarity][cardName].auction));
-            } else {
-              combineRarityPool = combineRarityPool.concat(processedCards[cardName].notAuctionUids.slice(0, cauldron.raritiesCards[rarity][cardName].notAuction));
-            }
-          }
-          combineBlock = [];
-          while (combineRarityPool.length + combineBlock.length >= rarityCombineSize) {
-            combineBlock.push(combineRarityPool.pop());
-            if (combineBlock.length == rarityCombineSize) {
-              combineSchedule.push(combineBlock);
-              combineBlock = [];
-            }
-          }
-        }
+    this.FromTransformator = function(cardId) {
+      if (jQuery.inArray(cardId, instance.data.cardsInTransformator) == -1) {
+        return;
       }
 
+      instance.data.cardsInTransformator.splice(instance.data.cardsInTransformator.indexOf(cardId), 1)
 
-      function checkStatus(url) {
-        $.ajax({
-          url: url,
-          type: "get",
-          success: function (res) {
-            if (res.status == "ok") {
-              if (res.data.card_ui_info) {
-                var rawCards = res.data.card_ui_info;
-                cardsIdMap[rawCards.uid] = rawCards;
-                if (typeof processedCards[rawCards.name] == 'undefined') {
-                  processedCards[rawCards.name] = {
-                    auctionNumber: 0,
-                    notAuctionNumber: 0,
-                    name: rawCards.name,
-                    rarity: rawCards.rarity,
-                    type: rawCards.type,
-                    auctionUids: [],
-                    notAuctionUids: []
-                  }
-                }
-                if (rawCards.auction) {
-                  processedCards[rawCards.name].auctionNumber++;
-                  processedCards[rawCards.name].auctionUids.push(rawCards.uid);
-                } else {
-                  processedCards[rawCards.name].notAuctionNumber++;
-                  processedCards[rawCards.name].notAuctionUids.push(rawCards.uid);
-                }
-                var firstDiv = spanResultCombine.find('div:nth-child(1)');
-                var cardLabel = "<span class=\""+rarityLabelMap[rawCards.rarity]+"\">"+rawCards.name+(rawCards.auction?"":" *")+"</span>";
-                firstDiv.html(firstDiv.html().replace("...", cardLabel));
-                var spans = firstDiv.find("span");
-                var lastSpan = $(spans[spans.length-1]);
+      Refresh();
+    };
 
-                var tooltipClass = 'pgf-card-tooltip';
-                var tooltip = pgf.game.widgets.CreateCardTooltip({
-                  type: rawCards.type,
-                  rarity: rawCards.rarity,
-                  name: rawCards.name,
-                  auction: rawCards.auction
-                }, tooltipClass);
-                pgf.game.widgets.UpdateElementTooltip(lastSpan, tooltip, tooltipClass, cardTooltipArgs);
+    this.Transform = function() {
+      if (!instance.CanTransform()) return;
+
+      localVersion += 1;
+
+      data = new FormData();
+
+      var ids = [];
+
+      for (var i in instance.data.transformator) {
+        var card = instance.data.transformator[i];
+        ids.push(card.uid);
+        data.append('card', card.uid);
+      }
+
+      pgf.ui.dialog.wait('start');
+
+      jQuery.ajax({
+        dataType: 'json',
+        type: 'post',
+        url: params.transformItems,
+        data: data,
+        contentType: false,
+        processData: false,
+
+        success: function(data, request, status) {
+          if (data.status == 'error') {
+            pgf.ui.dialog.wait('stop', stopCallback=function(){
+              pgf.ui.dialog.Error({message: data.error});
+            });
+            return;
+          }
+
+          pgf.ui.dialog.wait('stop', stopCallback=function() {
+            for (var i in ids) {
+              var id = ids[i];
+              delete instance.data.cards[id];
+            }
+
+            localVersion += 1;
+
+            instance.data.cards[data.data.card.uid] = data.data.card;
+
+            pgf.ui.dialog.Alert({message: data.data.message,
+              title: 'Превращение прошло успешно'});
+
+            Refresh();
+
+            jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+          });
+        },
+        error: function() {
+          pgf.ui.dialog.wait('stop', stopCallback=function(){
+            pgf.ui.dialog.Error({message: 'Неизвестная ошибка при превращении карт. Пожалуйста, перезагрузите страницу.'});
+          });
+        },
+        complete: function() {
+        }
+      });
+    };
+
+    this.DeleteCard = function(cardId) {
+      localVersion += 1;
+      delete instance.data.cards[cardId];
+    };
+
+    this.Use = function(cardId) {
+      localVersion += 1;
+      pgf.ui.dialog.Create({ fromUrl: params.useCardDialog + '?card=' + cardId,
+        OnOpen: function(dialog) {
+          var cardForm = new pgf.forms.Form(jQuery('.pgf-use-card-form', dialog),
+            { OnSuccess: function(form, data) {
+              jQuery(document).trigger(pgf.game.events.DATA_REFRESH_NEEDED);
+
+              instance.DeleteCard(cardId);
+
+              Refresh();
+
+              jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+
+              dialog.modal('hide');
+
+              if (data.data.message) {
+                pgf.ui.dialog.Alert({message: data.data.message,
+                  title: 'Карта использована',
+                  OnOk: function(e){}});
               }
-
-              if (combineSchedule.length > 0) {
-                combineNext();
-              } else {
-                combineProcess = false;
-                resetCauldron();
-                rebuildChoseList();
-                updateChoseList(cauldron);
-              }
-            } else if (res.status == 'processing') {
-              setTimeout(function () {
-                checkStatus(res.status_url);
-              }, 400);
-            } else if (res.status == 'error') {
-              combineProcess = false;
-              updateCards();
-              resetCauldron();
-              rebuildChoseList();
-              updateChoseList(cauldron);
-              var firstDiv = spanResultCombine.find('div:nth-child(1)');
-              firstDiv.html(firstDiv.html().replace("...", "Ошибка: " + JSON.stringify(res)));
-            }
-          }
-        });
-      }
-
-      function combineNext() {
-        var combineBlock = combineSchedule.shift();
-        var combineCardsLabels = [];
-
-        for (var i = 0; i < combineBlock.length; i++) {
-          combineCardsLabels.push("<span class=\""+rarityLabelMap[cardsIdMap[combineBlock[i]].rarity]+"\">"
-            + cardsIdMap[combineBlock[i]].name + (cardsIdMap[combineBlock[i]].auction?"":"*")
-            + "</span>"
-          );
+            }});
         }
-
-        $.ajax({
-          url: "/game/cards/api/combine?api_version=1.0&api_client=CrazyNigerTTE-0.3.5&cards=" + combineBlock.join(','),
-          type: "post",
-          method: "post",
-          data: {},
-          success: function(res) {
-            if (res.status == 'processing') {
-              for (var i = 0; i < combineBlock.length; i++) {
-                var card = cardsIdMap[combineBlock[i]];
-                var cardInfo = processedCards[card.name];
-                if (card.auction) {
-                  cardInfo.auctionUids.splice(cardInfo.auctionUids.indexOf(card.uid),1);
-                  cardInfo.auctionNumber = cardInfo.auctionUids.length;
-                } else {
-                  cardInfo.notAuctionUids.splice(cardInfo.notAuctionUids.indexOf(card.uid),1);
-                  cardInfo.notAuctionNumber = cardInfo.notAuctionUids.length;
-                }
-              }
-
-
-              spanResultCombine.prepend("<div>"+combineCardsLabels.join(" + ") + " = ...</div>");
-              setTimeout(function(){
-                checkStatus(res.status_url);
-              }, 200);
-            } else {
-              combineBtn.button('select');
-              combineProcess = false;
-              resetCauldron();
-              rebuildChoseList();
-              updateChoseList(cauldron);
-              spanResultCombine.html("<strong>Ошибка:</strong> " + res.error);
-            }
-
-          },
-          error: function(res) {
-            combineProcess = false;
-            combineBtn.button('select');
-            $(".tooltip").remove();
-            cardSelectedBlock.find("li[data-original-title]").remove();
-            resetCauldron();
-            updateChoseList(cauldron);
-          }
-        });
-      }
-
-      spanResultCombine.html("");
-      combineNext();
-    });
-
-    rebuildChoseList();
-    var n = 0;
-
-
-    function updateChoseList(cauldron, combineNumber) {
-      if (typeof combineNumber == 'undefined') {
-        combineNumber = 3;
-      }
-      var totalInRarity, totalResultInRarity, accountInRarity;
-      var resultRarity, rarity;
-      var results = {
-        0: {
-          auction: 0,
-          notAuction: 0
-        },
-        1: {
-          auction: 0,
-          notAuction: 0
-        },
-        2: {
-          auction: 0,
-          notAuction: 0
-        },
-        3: {
-          auction: 0,
-          notAuction: 0
-        },
-        4: {
-          auction: 0,
-          notAuction: 0
-        }
-      };
-      for (rarity in cauldron.raritiesNumber) {
-        totalInRarity = cauldron.raritiesNumber[rarity].auction + cauldron.raritiesNumber[rarity].notAuction;
-        totalResultInRarity = Math.floor(totalInRarity / ((rarity == 4)?2:combineNumber));
-        accountInRarity = Math.floor(cauldron.raritiesNumber[rarity].auction / ((rarity == 4)?2:combineNumber));
-
-        resultRarity = ((rarity == 4 || combineNumber==2)?rarity:(1*rarity + 1*1));
-
-        results[resultRarity].auction += accountInRarity;
-        results[resultRarity].notAuction += totalResultInRarity - accountInRarity;
-      }
-
-      var resultLabels = [];
-
-      for (var r in results) {
-        if (results[r].auction > 0) {
-          resultLabels.push("<span class=\""+rarityLabelMap[r]+"\">продаваемая "+rarityNameMap[r]+" x"+results[r].auction+"</span>");
-        }
-        if (results[r].notAuction > 0) {
-          resultLabels.push("<span class=\""+rarityLabelMap[r]+"\">не продаваемая "+rarityNameMap[r]+" x"+results[r].notAuction+"</span>");
-        }
-      }
-
-      if (resultLabels.length != 0) {
-        combineBtn.button('reset');
-      } else {
-        combineBtn.button('select');
-      }
-
-      spanResult.html("Результат: " + resultLabels.join(", "));
-
-      var cardName, li, card, cauldronCard;
-
-      $(".tooltip").remove();
-      cardSelectedBlock.find('li[data-original-title]').remove();
-
-      for (rarity in cauldron.raritiesCards) {
-        for (cardName in cauldron.raritiesCards[rarity]) {
-          card = processedCards[cardName];
-          cauldronCard = cauldron.raritiesCards[rarity][cardName];
-          if (cauldronCard.auction > 0) {
-            li = $(document.createElement('li'));
-            li.attr('data-original-title','');
-            li.append("<a href=\"javascript:void(0);\" class=\""+rarityLabelMap[rarity]+"\"  data-card-auction=\"true\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" ("+cauldronCard.auction+")</a>");
-            var tooltipClass = 'pgf-card-tooltip';
-            var tooltip = pgf.game.widgets.CreateCardTooltip({
-              type: card.type,
-              rarity: card.rarity,
-              name: card.name,
-              auction: true
-            }, tooltipClass);
-            pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
-            cardSelectedBlock.append(li);
-          }
-          if (cauldronCard.notAuction > 0) {
-            li = $(document.createElement('li'));
-            li.attr('data-original-title','');
-            li.append("<a href=\"javascript:void(0);\" class=\""+rarityLabelMap[rarity]+"\" data-card-auction=\"false\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+cardName+" * ("+cauldronCard.notAuction+")</a>");
-            var tooltipClass = 'pgf-card-tooltip';
-            var tooltip = pgf.game.widgets.CreateCardTooltip({
-              type: card.type,
-              rarity: card.rarity,
-              name: card.name,
-              auction: false
-            }, tooltipClass);
-            pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
-            cardSelectedBlock.append(li);
-          }
-        }
-      }
-
-      var links = cardSelectedBlock.find("a");
-      links.on('click', function(e){
-        if (combineProcess) {
-          return;
-        }
-        var $link = $(e.target);
-        var cardName = $link.data('card-name');
-        var cardAuction = $link.data('card-auction');
-        var cardRarity = processedCards[cardName].rarity;
-
-        var cardLeft = 0;
-
-        var move = returnPer;
-
-        if (cardAuction) {
-          move = Math.min(move, cauldron.raritiesCards[cardRarity][cardName].auction);
-          cauldron.raritiesNumber[cardRarity].auction -= move;
-          cauldron.raritiesCards[cardRarity][cardName].auction -= move;
-
-          cardLeft = processedCards[cardName].auctionNumber - cauldron.raritiesCards[cardRarity][cardName].auction;
-        } else {
-          move = Math.min(move, cauldron.raritiesCards[cardRarity][cardName].notAuction);
-          cauldron.raritiesNumber[cardRarity].notAuction -= move;
-          cauldron.raritiesCards[cardRarity][cardName].notAuction -= move;
-          cardLeft = processedCards[cardName].notAuctionNumber - cauldron.raritiesCards[cardRarity][cardName].notAuction;
-        }
-
-        var $a = cardChoicesBlock.find("a[data-card-name=\""+cardName+"\"][data-card-auction="+cardAuction+"]");
-        $a.text(cardName + (cardAuction?"":" *") +" ("+cardLeft+")");
-
-        updateChoseList(cauldron);
       });
     }
 
+    this.GetCards();
   };
 
-  var cardsIdMap = {};
+  pgf.game.CardsTransformatorDialog = function(dialog, cardsWidget) {
 
-  var _instance = null;
+    var instance = this;
 
-  function updateCards()
-  {
-    var rawCards = _instance.GetCards();
-    processedCards = {};
-    cardsIdMap = {};
-    if (rawCards) {
-      for (var i = 0; i < rawCards.length; i++) {
-        cardsIdMap[rawCards[i].uid] = rawCards[i];
-        if (typeof processedCards[rawCards[i].name] == 'undefined') {
-          processedCards[rawCards[i].name] = {
-            auctionNumber: 0,
-            notAuctionNumber: 0,
-            name: rawCards[i].name,
-            rarity: rawCards[i].rarity,
-            type: rawCards[i].type,
-            auctionUids: [],
-            notAuctionUids: []
+    var handWidget = jQuery('.pgf-cards-in-hand', dialog);
+    var storageWidget = jQuery('.pgf-cards-in-storage', dialog);
+    var transformatorWidget = jQuery('.pgf-cards-in-transformator', dialog);
+    var transformButton = jQuery('.pgf-transform-button', dialog)
+
+    function Initialize() {
+      cardsWidget.RenderHand(handWidget);
+      cardsWidget.RenderStorage(storageWidget);
+      cardsWidget.RenderTransformator(transformatorWidget);
+      transformButton.toggleClass('pgf-disabled disabled', !cardsWidget.CanTransform())
+
+      jQuery('.pgf-card-link', handWidget).off().click(function(e){
+        e.preventDefault();
+        e.stopPropagation();
+
+        var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
+
+        var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
+
+        do {
+          var id = ids.pop();
+          if (id) {
+            cardsWidget.ToTransformator(id);
           }
-        }
-        if (rawCards[i].auction) {
-          processedCards[rawCards[i].name].auctionNumber++;
-          processedCards[rawCards[i].name].auctionUids.push(rawCards[i].uid);
-        } else {
-          processedCards[rawCards[i].name].notAuctionNumber++;
-          processedCards[rawCards[i].name].notAuctionUids.push(rawCards[i].uid);
-        }
-      }
-    }
-  }
+          stackSize--;
+        } while (id && stackSize > 0);
 
-  function modifiedShowCards(container, filterUIDs) {
-    _instance = this;
-    updateCards();
+        Initialize();
+      });
 
-    var n = 0;
-    var cardTooltipArgs = jQuery.extend({}, pgf.base.tooltipsArgs);
-    cardTooltipArgs.placement = function(tip, element) {
-      var offset = jQuery(element).offset();
-      if (offset.left == 0 && offset.top == 0) {
-        jQuery(tip).addClass('pgf-hidden');
-      }
-      return 'right';
-    };
+      jQuery('.pgf-card-link', storageWidget).off().click(function(e){
+        e.preventDefault();
+        e.stopPropagation();
 
-    $(".tooltip").remove();
-    container.find('li[data-original-title]').remove();
-    for (var rarity = 0; rarity <= 4; rarity++) {
-      for (var cardName in processedCards) {
-        if (processedCards.hasOwnProperty(cardName)) {
-          var card = processedCards[cardName];
-          if (card.rarity == rarity) {
-            var li = $(document.createElement('li'));
-            li.addClass(n%2==0?'odd':'even');
-            li.attr('data-original-title','');
-            var caption = cardName;
-            var captionParts = [];
-            var cardUid = 0;
-            if (card.notAuctionNumber > 0) {
-              cardUid = card.notAuctionUids[0];
-              captionParts.push("*" + card.notAuctionNumber);
-            }
-            if (card.auctionNumber > 0) {
-              if (cardUid == 0) {
-                cardUid = card.auctionUids[0];
-              }
-              captionParts.push(card.auctionNumber);
-            }
-            caption += " ("+captionParts.join('/')+")";
+        var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
 
-            li.append("<a href=\"/game/cards/use-dialog\" data-card-uid=\""+cardUid+"\" class=\"pgf-card-uid-"+cardUid+" pgf-card-record pgf-card-link "+rarityLabelMap[rarity]+"\" data-card-name=\""+cardName+"\" style=\"font-size:10pt\">"+caption+"</a>");
-            var tooltipClass = 'pgf-card-tooltip';
-            var tooltip = pgf.game.widgets.CreateCardTooltip({
-              type: card.type,
-              rarity: card.rarity,
-              name: card.name,
-              auction: card.auctionNumber > 0
-            }, tooltipClass);
-            pgf.game.widgets.UpdateElementTooltip(li, tooltip, tooltipClass, cardTooltipArgs);
-            container.append(li);
-            n++;
+        var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
+
+        do {
+          var id = ids.pop();
+          if (id) {
+            cardsWidget.ToTransformator(id);
           }
-        }
-      }
+          stackSize--;
+        } while (id && stackSize > 0);
+
+        Initialize();
+      });
+
+      jQuery('.pgf-card-link', transformatorWidget).off().click(function(e){
+        e.preventDefault();
+        e.stopPropagation();
+
+        var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
+
+
+        var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
+
+        do {
+          var id = ids.pop();
+          if (id) {
+            cardsWidget.FromTransformator(id);
+          }
+          stackSize--;
+        } while (id && stackSize > 0);
+
+        Initialize();
+      });
+
+      transformButton.off().click(function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        cardsWidget.Transform();
+
+        Initialize();
+      });
     }
-  }
-  var originShowCards = widgets.actions.ShowCards;
-  widgets.actions.ShowCards = modifiedShowCards.bind(widgets.actions);
-  widgets.actions.ShowCards($(".pgf-cards-container"));
+
+    jQuery(document).bind(pgf.game.events.CARDS_REFRESHED, function(e, diary){
+      Initialize();
+    });
+
+    Initialize();
+  };
+
+  widgets.cards = new pgf.game.widgets.Cards({getItems: "/game/cards/api/get-cards?api_client=the_tale-v0.3.25.4&api_version=2.0",
+    getCard: "/game/cards/api/get?api_client=the_tale-v0.3.25.4&api_version=2.0",
+    transformItems: "/game/cards/api/combine?api_client=the_tale-v0.3.25.4&api_version=2.0",
+    moveToStorage: "/game/cards/api/move-to-storage?api_client=the_tale-v0.3.25.4&api_version=2.0",
+    moveToHand: "/game/cards/api/move-to-hand?api_client=the_tale-v0.3.25.4&api_version=2.0",
+    useCardDialog: "/game/cards/use-dialog"});
 }
 
-setTimeout(function(){
-  var s = document.createElement("script");
-  s.innerHTML = `
-(${replaceCardsBlock.toString()})();
-`;
-  document.body.appendChild(s);
-},100);
+setTimeout(() => {
+    const injectScript = document.createElement("script");
+    const code = document.createTextNode(inject.toString() + ';inject();');
+    injectScript.appendChild(code);
+    document.body.appendChild(injectScript);
+
+}, 100);
