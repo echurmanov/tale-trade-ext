@@ -1,6 +1,11 @@
-
 function inject() {
     pgf.game.widgets.CARDS_TRANSFORMATOR_DIALOG = `
+<style>
+    #mass-combine-result {
+        height: 400px;
+        overflow-y: scroll;
+    }
+</style>
 <div class="modal hide">
 
   <div class="modal-header">
@@ -155,472 +160,529 @@ function inject() {
 </div>
 `;
 
-  pgf.game.widgets.Cards = function (params) {
+    pgf.game.widgets.Cards = function (params) {
 
-    var instance = this;
+        var instance = this;
 
-    instance.data = {cards: {},
-      hand: [],
-      storage: [],
-      transformator: [],
-      cardsInTransformator: []};
+        instance.data = {
+            cards: {},
+            hand: [],
+            storage: [],
+            transformator: [],
+            cardsInTransformator: []
+        };
 
-    var localVersion = 0;
-    var firstRequest = true;
+        var localVersion = 0;
+        var firstRequest = true;
 
-    function Refresh() {
-      instance.data.hand = [];
-      instance.data.storage = [];
-      instance.data.transformator = [];
+        function Refresh() {
+            instance.data.hand = [];
+            instance.data.storage = [];
+            instance.data.transformator = [];
 
-      for (var i in instance.data.cards) {
-        var card = instance.data.cards[i];
+            for (var i in instance.data.cards) {
+                var card = instance.data.cards[i];
 
-        if (jQuery.inArray(card.uid, instance.data.cardsInTransformator) != -1) {
-          instance.data.transformator.push(card)
-          continue;
-        }
+                if (jQuery.inArray(card.uid, instance.data.cardsInTransformator) != -1) {
+                    instance.data.transformator.push(card)
+                    continue;
+                }
 
-        if (card.in_storage) {
-          instance.data.storage.push(card);
-        }
-        else {
-          instance.data.hand.push(card);
-        }
-      }
-    }
-
-    this.GetCards = function() {
-
-      var requestedVersion = localVersion + 1;
-
-      jQuery.ajax({
-        dataType: 'json',
-        type: 'get',
-        url: params.getItems,
-
-        success: function(data, request, status) {
-
-          if (requestedVersion <= localVersion) {
-            instance.GetCards();
-            return;
-          }
-
-          localVersion = requestedVersion;
-
-          var oldKeys = [];
-          var newKeys = [];
-
-          for (var uid in instance.data.cards)  {
-            oldKeys.push(uid);
-          }
-
-          for (var i in data.data.cards) {
-            var card = data.data.cards[i];
-            newKeys.push(card.uid);
-          }
-
-          oldKeys.sort();
-          newKeys.sort();
-
-          var cardsChanged = !(JSON.stringify(oldKeys) == JSON.stringify(newKeys));
-
-          instance.data.cards = {}
-
-          for (var i in data.data.cards) {
-            var card = data.data.cards[i];
-            instance.data.cards[card.uid] = card;
-          }
-
-          if (cardsChanged || firstRequest) {
-            Refresh();
-            jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
-          }
-
-          firstRequest = false;
-        },
-        error: function() {
-        },
-        complete: function() {
-        }
-      });
-    };
-
-    this.GetCard = function() {
-      pgf.forms.Post({ action: params.getCard,
-        OnSuccess: function(data){
-          jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
-
-          instance.GetCards();
-
-          pgf.ui.dialog.Alert({message: data.data.message,
-            title: 'Вы получаете новую карту!',
-            OnOk: function(e){}});
-          return;
-        }
-      });
-    };
-
-    this.RenderHand = function(widget) {
-      var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.hand);
-      pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
-    };
-
-    this.RenderStorage = function(widget) {
-      var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.storage);
-      pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
-    };
-
-    this.RenderTransformator = function(widget) {
-      var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.transformator);
-      pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
-    };
-
-    this.HasCardsInHand = function() {return instance.data.hand.length > 0;};
-
-    this.CanTransform = function() {
-      if (instance.BuildTransformPlan().length == 0) return false;
-
-      return true;
-    }
-
-    this.BuildTransformPlan = function () {
-      console.log(instance.data.transformator);
-      var i, j, card, targetGroup;
-      var combinePlane = [];
-      var candidateGroups = [];
-      var form = $("#tte-card-combine-settings-form").serializeArray().reduce(
-        function(prev, el) {
-          prev[el.name] = el.value;
-          return prev;
-        },
-        {}
-      );
-      console.log(form);
-      var groupSize = 1 * form['group-size'];
-      for (i = 0; i < instance.data.transformator.length; i++) {
-          card = instance.data.transformator[i];
-          targetGroup = null;
-          for (j = 0; j < candidateGroups.length && targetGroup === null; j++) {
-            if (form['same-type'] === 'combine') {
-              if (candidateGroups[j][0].full_type === card.full_type) {
-                targetGroup = candidateGroups[j];
-              }
-            } else if (form['same-type'] === 'not-combine'){
-              if (candidateGroups[j].length == 2 || candidateGroups[j][0].full_type !== card.full_type) {
-                targetGroup = candidateGroups[j];
-              }
+                if (card.in_storage) {
+                    instance.data.storage.push(card);
+                }
+                else {
+                    instance.data.hand.push(card);
+                }
             }
-          }
-
-          if (targetGroup === null) {
-              targetGroup = [];
-              candidateGroups.push(targetGroup);
-          }
-          targetGroup.push(card);
-          if (targetGroup.length === groupSize) {
-              if (targetGroup.length === 1 && card.rarity === 0) {
-                  continue;
-              }
-              combinePlane.push(targetGroup);
-              candidateGroups.splice(candidateGroups.indexOf(targetGroup), 1);
-          }
-      }
-      console.log("PLane", combinePlane);
-      return combinePlane;
-    };
-
-    this.OpenStorageDialog = function() {
-      pgf.ui.dialog.Create({ fromString: pgf.game.widgets.CARDS_STORAGE_DIALOG,
-        OnOpen: function(dialog) {
-          pgf.game.CardsStorageDialog(dialog, instance);
-        }
-      });
-    };
-
-    this.OpenTransformatorDialog = function() {
-      pgf.ui.dialog.Create({ fromString: pgf.game.widgets.CARDS_TRANSFORMATOR_DIALOG,
-        OnOpen: function(dialog) {
-          pgf.game.CardsTransformatorDialog(dialog, instance);
-        }
-      });
-    };
-
-    var ChangeStorage = function(cardsIds, inStorage, url, errorMessage) {
-      localVersion += 1;
-
-      data = new FormData();
-
-      for (var i in cardsIds) {
-        var card = instance.data.cards[cardsIds[i]];
-        card.in_storage = inStorage;
-        data.append('card', card.uid);
-      }
-
-      function Undo(message) {
-        localVersion += 1;
-
-        for (var i in cardsIds) {
-          instance.data.cards[cardsIds[i]].in_storage = false;
         }
 
-        pgf.ui.dialog.Error({message: message});
+        this.GetCards = function () {
 
-        Refresh();
+            var requestedVersion = localVersion + 1;
 
-        jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
-      }
+            jQuery.ajax({
+                dataType: 'json',
+                type: 'get',
+                url: params.getItems,
 
-      jQuery.ajax({
-        dataType: 'json',
-        type: 'post',
-        url: url,
-        data: data,
-        contentType: false,
-        processData: false,
-        success: function(data, request, status) {
-          if (data.status == 'error') {
-            Undo(data.error);
-            return;
-          }
+                success: function (data, request, status) {
 
-          localVersion += 1;
-        },
-        error: function() {
-          Undo(errorMessage);
-        }
-      });
+                    if (requestedVersion <= localVersion) {
+                        instance.GetCards();
+                        return;
+                    }
 
-      Refresh();
+                    localVersion = requestedVersion;
 
-      jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
-    };
+                    var oldKeys = [];
+                    var newKeys = [];
 
-    this.ToStorage = function(cardsIds) {
-      ChangeStorage(cardsIds,
-        true,
-        params.moveToStorage,
-        'Неизвестная ошибка при перемещении карт в хранилище. Пожалуйста, обновите страницу.');
-    };
+                    for (var uid in instance.data.cards) {
+                        oldKeys.push(uid);
+                    }
 
-    this.ToHand = function(cardsIds) {
-      ChangeStorage(cardsIds,
-        false,
-        params.moveToHand,
-        'Неизвестная ошибка при перемещении карт в руку. Пожалуйста, обновите страницу.');
-    };
+                    for (var i in data.data.cards) {
+                        var card = data.data.cards[i];
+                        newKeys.push(card.uid);
+                    }
 
-    this.ToTransformator = function(cardId) {
-      if (jQuery.inArray(cardId, instance.data.cardsInTransformator) != -1) {
-        return;
-      }
+                    oldKeys.sort();
+                    newKeys.sort();
 
-      instance.data.cardsInTransformator.push(cardId);
+                    var cardsChanged = !(JSON.stringify(oldKeys) == JSON.stringify(newKeys));
 
-      Refresh();
-    };
+                    instance.data.cards = {}
 
-    this.FromTransformator = function(cardId) {
-      if (jQuery.inArray(cardId, instance.data.cardsInTransformator) == -1) {
-        return;
-      }
+                    for (var i in data.data.cards) {
+                        var card = data.data.cards[i];
+                        instance.data.cards[card.uid] = card;
+                    }
 
-      instance.data.cardsInTransformator.splice(instance.data.cardsInTransformator.indexOf(cardId), 1)
+                    jQuery(document).trigger(pgf.game.events.CARDS_TIMER_DATA, {
+                        newCardsNumber: data.data.new_cards,
+                        newCardTimer: data.data.new_card_timer
+                    });
 
-      Refresh();
-    };
+                    if (cardsChanged || firstRequest) {
+                        Refresh();
+                        jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+                    }
 
-    this.Transform = function() {
-      if (!instance.CanTransform()) return;
-
-      localVersion += 1;
-
-      data = new FormData();
-
-      var ids = [];
-
-      for (var i in instance.data.transformator) {
-        var card = instance.data.transformator[i];
-        ids.push(card.uid);
-        data.append('card', card.uid);
-      }
-
-      pgf.ui.dialog.wait('start');
-
-      jQuery.ajax({
-        dataType: 'json',
-        type: 'post',
-        url: params.transformItems,
-        data: data,
-        contentType: false,
-        processData: false,
-
-        success: function(data, request, status) {
-          if (data.status == 'error') {
-            pgf.ui.dialog.wait('stop', stopCallback=function(){
-              pgf.ui.dialog.Error({message: data.error});
+                    firstRequest = false;
+                },
+                error: function () {
+                },
+                complete: function () {
+                }
             });
-            return;
-          }
+        };
 
-          pgf.ui.dialog.wait('stop', stopCallback=function() {
-            for (var i in ids) {
-              var id = ids[i];
-              delete instance.data.cards[id];
+        this.GetCard = function () {
+            pgf.forms.Post({
+                action: params.getCard,
+                OnSuccess: function (data) {
+                    instance.GetCards();
+                    instance.OpenNewCardsDialog(data.data.cards);
+                }
+            });
+        };
+
+        this.RenderHand = function (widget) {
+            var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.hand);
+            pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
+        };
+
+        this.RenderStorage = function (widget) {
+            var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.storage);
+            pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
+        };
+
+        this.RenderTransformator = function (widget) {
+            var cards = pgf.game.widgets.PrepairCardsRenderSequence(instance.data.transformator);
+            pgf.base.RenderTemplateList(widget, cards, pgf.game.widgets.RenderCard, {});
+        };
+
+        this.HasCardsInHand = function () {
+            return instance.data.hand.length > 0;
+        };
+
+        this.CanTransform = function () {
+            if (instance.BuildTransformPlan().length == 0) return false;
+
+            return true;
+        }
+
+        this.BuildTransformPlan = function () {
+            var i, j, card, targetGroup;
+            var combinePlane = [];
+            var candidateGroups = [];
+            var form = $("#tte-card-combine-settings-form").serializeArray().reduce(
+                function (prev, el) {
+                    prev[el.name] = el.value;
+                    return prev;
+                },
+                {}
+            );
+            console.log(form);
+            var groupSize = 1 * form['group-size'];
+            for (i = 0; i < instance.data.transformator.length; i++) {
+                card = instance.data.transformator[i];
+                targetGroup = null;
+                for (j = 0; j < candidateGroups.length && targetGroup === null; j++) {
+                    if (candidateGroups[j][0].rarity === card.rarity) {
+                        if (form['same-type'] === 'combine') {
+                            if (candidateGroups[j][0].type === card.type) {
+                                targetGroup = candidateGroups[j];
+                            }
+                        } else if (form['same-type'] === 'not-combine') {
+                            if (candidateGroups[j].length == 2 || candidateGroups[j][0].type !== card.type) {
+                                targetGroup = candidateGroups[j];
+                            }
+                        }
+                    }
+                }
+
+                if (targetGroup === null) {
+                    targetGroup = [];
+                    candidateGroups.push(targetGroup);
+                }
+                targetGroup.push(card);
+                if (targetGroup.length === groupSize) {
+                    if (targetGroup.length === 1 && card.rarity === 0) {
+                        continue;
+                    }
+                    combinePlane.push(targetGroup);
+                    candidateGroups.splice(candidateGroups.indexOf(targetGroup), 1);
+                }
             }
+            console.log("PLane", combinePlane);
+            return combinePlane;
+        };
+
+        this.OpenNewCardsDialog = function (newCards) {
+            pgf.ui.dialog.Create({
+                fromString: pgf.game.widgets.NEW_CARDS_DIALOG,
+                OnOpen: function (dialog) {
+                    pgf.game.NewCardsDialog(dialog, newCards);
+                }
+            });
+        };
+
+        this.OpenStorageDialog = function () {
+            pgf.ui.dialog.Create({
+                fromString: pgf.game.widgets.CARDS_STORAGE_DIALOG,
+                OnOpen: function (dialog) {
+                    pgf.game.CardsStorageDialog(dialog, instance);
+                }
+            });
+        };
+
+        this.OpenTransformatorDialog = function () {
+            pgf.ui.dialog.Create({
+                fromString: pgf.game.widgets.CARDS_TRANSFORMATOR_DIALOG,
+                OnOpen: function (dialog) {
+                    pgf.game.CardsTransformatorDialog(dialog, instance);
+                }
+            });
+        };
+
+        var ChangeStorage = function (cardsIds, inStorage, url, errorMessage) {
+            localVersion += 1;
+
+            data = new FormData();
+
+            for (var i in cardsIds) {
+                var card = instance.data.cards[cardsIds[i]];
+                card.in_storage = inStorage;
+                data.append('card', card.uid);
+            }
+
+            function Undo(message) {
+                localVersion += 1;
+
+                for (var i in cardsIds) {
+                    instance.data.cards[cardsIds[i]].in_storage = false;
+                }
+
+                pgf.ui.dialog.Error({message: message});
+
+                Refresh();
+
+                jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+            }
+
+            jQuery.ajax({
+                dataType: 'json',
+                type: 'post',
+                url: url,
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (data, request, status) {
+                    if (data.status == 'error') {
+                        Undo(data.error);
+                        return;
+                    }
+
+                    localVersion += 1;
+                },
+                error: function () {
+                    Undo(errorMessage);
+                }
+            });
+
+            Refresh();
+
+            jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+        };
+
+        this.ToStorage = function (cardsIds) {
+            ChangeStorage(cardsIds,
+                true,
+                params.moveToStorage,
+                'Неизвестная ошибка при перемещении карт в хранилище. Пожалуйста, обновите страницу.');
+        };
+
+        this.ToHand = function (cardsIds) {
+            ChangeStorage(cardsIds,
+                false,
+                params.moveToHand,
+                'Неизвестная ошибка при перемещении карт в руку. Пожалуйста, обновите страницу.');
+        };
+
+        this.ToTransformator = function (cardId) {
+            if (jQuery.inArray(cardId, instance.data.cardsInTransformator) != -1) {
+                return;
+            }
+
+            instance.data.cardsInTransformator.push(cardId);
+
+            Refresh();
+        };
+
+        this.FromTransformator = function (cardId) {
+            if (jQuery.inArray(cardId, instance.data.cardsInTransformator) == -1) {
+                return;
+            }
+
+            instance.data.cardsInTransformator.splice(instance.data.cardsInTransformator.indexOf(cardId), 1)
+
+            Refresh();
+        };
+
+        this.Transform = function () {
+            if (!instance.CanTransform()) return;
 
             localVersion += 1;
 
-            instance.data.cards[data.data.card.uid] = data.data.card;
+            const plane = this.BuildTransformPlan();
 
-            pgf.ui.dialog.Alert({message: data.data.message,
-              title: 'Превращение прошло успешно'});
+            pgf.ui.dialog.Alert({
+                message: `<ul id="mass-combine-result"></ul>`,
+                title: 'Результаты превращений'
+            });
 
-            Refresh();
+            const $header = jQuery("#mass-combine-result").parent().parent().find(".modal-header h3");
+            console.log($header);
 
-            jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
-          });
-        },
-        error: function() {
-          pgf.ui.dialog.wait('stop', stopCallback=function(){
-            pgf.ui.dialog.Error({message: 'Неизвестная ошибка при превращении карт. Пожалуйста, перезагрузите страницу.'});
-          });
-        },
-        complete: function() {
+            function transformNext() {
+                var data = new FormData();
+                var ids = [];
+                const transformator = plane.pop();
+
+                if (!transformator) {
+                    Refresh();
+                    jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+                    return;
+                }
+
+                $header.text(`Результаты превращений (осталось ${plane.length})`);
+
+                for (var i in transformator) {
+                    var card = transformator[i];
+                    ids.push(card.uid);
+                    data.append('card', card.uid);
+                }
+
+                jQuery.ajax({
+                    dataType: 'json',
+                    type: 'post',
+                    url: params.transformItems,
+                    data: data,
+                    contentType: false,
+                    processData: false,
+
+                    success: function (data, request, status) {
+                        if (data.status == 'error') {
+                            pgf.ui.dialog.Error({message: data.error});
+                            Refresh();
+                            jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+                            return;
+                        }
+
+                        const ul = document.getElementById("mass-combine-result");
+                        const li = document.createElement("li");
+                        ul.appendChild(li);
+
+                        for (var i in ids) {
+                            var id = ids[i];
+                            const $a = $("<a href=\"#\" class=\"pgf-card-link\" style=\"font-size: 10pt;\"><span class=\"pgf-card-record\"></span></a>");
+                            pgf.game.widgets.RenderCard(i, instance.data.cards[ids[i]], $a);
+                            if (i > 0) {
+                                $(li).append(" + ");
+                            }
+                            $(li).append($a);
+                            delete instance.data.cards[id];
+                        }
+                        const $a = $("<a href=\"#\" class=\"pgf-card-link\" style=\"font-size: 10pt;\"><span class=\"pgf-card-record\"></span></a>");
+                        pgf.game.widgets.RenderCard(0, data.data.card, $a);
+                        $(li).append(" = ");
+                        $(li).append($a);
+
+                        localVersion += 1;
+                        instance.data.cards[data.data.card.uid] = data.data.card;
+                        transformNext();
+                    },
+                    error: function () {
+                        pgf.ui.dialog.Error({message: 'Неизвестная ошибка при превращении карт. Пожалуйста, перезагрузите страницу.'});
+                    },
+                    complete: function () {
+                    }
+                });
+            }
+
+            transformNext();
+
+        };
+
+        this.DeleteCard = function (cardId) {
+            localVersion += 1;
+            delete instance.data.cards[cardId];
+        };
+
+        this.Use = function (cardId) {
+            localVersion += 1;
+            pgf.ui.dialog.Create({
+                fromUrl: params.useCardDialog + '?card=' + cardId,
+                OnOpen: function (dialog) {
+                    var cardForm = new pgf.forms.Form(jQuery('.pgf-use-card-form', dialog),
+                        {
+                            OnSuccess: function (form, data) {
+                                jQuery(document).trigger(pgf.game.events.DATA_REFRESH_NEEDED);
+
+                                instance.DeleteCard(cardId);
+
+                                Refresh();
+
+                                jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
+
+                                dialog.modal('hide');
+
+                                if (data.data.message) {
+                                    pgf.ui.dialog.Alert({
+                                        message: data.data.message,
+                                        title: 'Карта использована',
+                                        OnOk: function (e) {
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                }
+            });
         }
-      });
+
+        this.GetCards();
     };
 
-    this.DeleteCard = function(cardId) {
-      localVersion += 1;
-      delete instance.data.cards[cardId];
+    pgf.game.CardsTransformatorDialog = function (dialog, cardsWidget) {
+
+        var instance = this;
+
+        var handWidget = jQuery('.pgf-cards-in-hand', dialog);
+        var storageWidget = jQuery('.pgf-cards-in-storage', dialog);
+        var transformatorWidget = jQuery('.pgf-cards-in-transformator', dialog);
+        var transformButton = jQuery('.pgf-transform-button', dialog)
+
+        function Initialize() {
+            cardsWidget.RenderHand(handWidget);
+            cardsWidget.RenderStorage(storageWidget);
+            cardsWidget.RenderTransformator(transformatorWidget);
+            transformButton.toggleClass('pgf-disabled disabled', !cardsWidget.CanTransform())
+
+            jQuery('.pgf-card-link', handWidget).off().click(function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
+
+                var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
+
+                do {
+                    var id = ids.pop();
+                    if (id) {
+                        cardsWidget.ToTransformator(id);
+                    }
+                    stackSize--;
+                } while (id && stackSize > 0);
+
+                Initialize();
+            });
+
+            jQuery('.pgf-card-link', storageWidget).off().click(function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
+
+                var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
+
+                do {
+                    var id = ids.pop();
+                    if (id) {
+                        cardsWidget.ToTransformator(id);
+                    }
+                    stackSize--;
+                } while (id && stackSize > 0);
+
+                Initialize();
+            });
+
+            jQuery('.pgf-card-link', transformatorWidget).off().click(function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
+
+
+                var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
+
+                do {
+                    var id = ids.pop();
+                    if (id) {
+                        cardsWidget.FromTransformator(id);
+                    }
+                    stackSize--;
+                } while (id && stackSize > 0);
+
+                Initialize();
+            });
+
+            transformButton.off().click(function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                cardsWidget.Transform();
+
+                Initialize();
+            });
+        }
+
+        jQuery(document).bind(pgf.game.events.CARDS_REFRESHED, function (e, diary) {
+            Initialize();
+        });
+
+        Initialize();
     };
 
-    this.Use = function(cardId) {
-      localVersion += 1;
-      pgf.ui.dialog.Create({ fromUrl: params.useCardDialog + '?card=' + cardId,
-        OnOpen: function(dialog) {
-          var cardForm = new pgf.forms.Form(jQuery('.pgf-use-card-form', dialog),
-            { OnSuccess: function(form, data) {
-              jQuery(document).trigger(pgf.game.events.DATA_REFRESH_NEEDED);
-
-              instance.DeleteCard(cardId);
-
-              Refresh();
-
-              jQuery(document).trigger(pgf.game.events.CARDS_REFRESHED);
-
-              dialog.modal('hide');
-
-              if (data.data.message) {
-                pgf.ui.dialog.Alert({message: data.data.message,
-                  title: 'Карта использована',
-                  OnOk: function(e){}});
-              }
-            }});
-        }
-      });
-    }
-
-    this.GetCards();
-  };
-
-  pgf.game.CardsTransformatorDialog = function(dialog, cardsWidget) {
-
-    var instance = this;
-
-    var handWidget = jQuery('.pgf-cards-in-hand', dialog);
-    var storageWidget = jQuery('.pgf-cards-in-storage', dialog);
-    var transformatorWidget = jQuery('.pgf-cards-in-transformator', dialog);
-    var transformButton = jQuery('.pgf-transform-button', dialog)
-
-    function Initialize() {
-      cardsWidget.RenderHand(handWidget);
-      cardsWidget.RenderStorage(storageWidget);
-      cardsWidget.RenderTransformator(transformatorWidget);
-      transformButton.toggleClass('pgf-disabled disabled', !cardsWidget.CanTransform())
-
-      jQuery('.pgf-card-link', handWidget).off().click(function(e){
-        e.preventDefault();
-        e.stopPropagation();
-
-        var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
-
-        var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
-
-        do {
-          var id = ids.pop();
-          if (id) {
-            cardsWidget.ToTransformator(id);
-          }
-          stackSize--;
-        } while (id && stackSize > 0);
-
-        Initialize();
-      });
-
-      jQuery('.pgf-card-link', storageWidget).off().click(function(e){
-        e.preventDefault();
-        e.stopPropagation();
-
-        var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
-
-        var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
-
-        do {
-          var id = ids.pop();
-          if (id) {
-            cardsWidget.ToTransformator(id);
-          }
-          stackSize--;
-        } while (id && stackSize > 0);
-
-        Initialize();
-      });
-
-      jQuery('.pgf-card-link', transformatorWidget).off().click(function(e){
-        e.preventDefault();
-        e.stopPropagation();
-
-        var ids = jQuery('.pgf-card-record', e.currentTarget).data('ids');
-
-
-        var stackSize = $("#tte-move-card-block-size>.active").data('number') || 1;
-
-        do {
-          var id = ids.pop();
-          if (id) {
-            cardsWidget.FromTransformator(id);
-          }
-          stackSize--;
-        } while (id && stackSize > 0);
-
-        Initialize();
-      });
-
-      transformButton.off().click(function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        cardsWidget.Transform();
-
-        Initialize();
-      });
-    }
-
-    jQuery(document).bind(pgf.game.events.CARDS_REFRESHED, function(e, diary){
-      Initialize();
+    widgets.cards = new pgf.game.widgets.Cards({
+        getItems: "/game/cards/api/get-cards?api_client=the_tale-v0.3.25.4&api_version=2.0",
+        getCard: "/game/cards/api/receive?api_client=the_tale-v0.3.25.4&api_version=1.0",
+        transformItems: "/game/cards/api/combine?api_client=the_tale-v0.3.25.4&api_version=2.0",
+        moveToStorage: "/game/cards/api/move-to-storage?api_client=the_tale-v0.3.25.4&api_version=2.0",
+        moveToHand: "/game/cards/api/move-to-hand?api_client=the_tale-v0.3.25.4&api_version=2.0",
+        useCardDialog: "/game/cards/use-dialog"
     });
 
-    Initialize();
-  };
-
-  widgets.cards = new pgf.game.widgets.Cards({getItems: "/game/cards/api/get-cards?api_client=the_tale-v0.3.25.4&api_version=2.0",
-    getCard: "/game/cards/api/get?api_client=the_tale-v0.3.25.4&api_version=2.0",
-    transformItems: "/game/cards/api/combine?api_client=the_tale-v0.3.25.4&api_version=2.0",
-    moveToStorage: "/game/cards/api/move-to-storage?api_client=the_tale-v0.3.25.4&api_version=2.0",
-    moveToHand: "/game/cards/api/move-to-hand?api_client=the_tale-v0.3.25.4&api_version=2.0",
-    useCardDialog: "/game/cards/use-dialog"});
+    jQuery('.pgf-transformator-card-button').off().click(function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (widgets.cards) {
+            widgets.cards.OpenTransformatorDialog();
+        }
+        cardsDropdownCountrol.dropdown('toggle');
+    });
 }
 
 setTimeout(() => {

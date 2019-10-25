@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
   "name": "The Tale Trade Ext",
-  "version": "0.5.2",
-  "description": "Расширение для Сказки, улчушающая работу с рынком и Картами Судьбы.",
+  "version": "0.6.1",
+  "description": "Расширение для Сказки, улчушающая работу с Картами Судьбы.",
   "icons": { "128": "icon.png" },
-  "permissions": ["http://the-tale.org/*", "http://tale-ext.webtricks.pro/*"],
+  "permissions": ["https://the-tale.org/*"],
   "content_scripts": [
     {
-      "matches": ["http://the-tale.org/game/*"],
+      "matches": ["https://the-tale.org/game/*"],
       "css": ["mystyles.css"],
       "js": ["game.js"]
     }
